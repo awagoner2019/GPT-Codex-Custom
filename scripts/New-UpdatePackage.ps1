@@ -102,7 +102,7 @@ try {
         generatedAtUtc = [DateTime]::UtcNow.ToString("o")
         files = @($manifestEntries)
     }
-    $manifestJson = ($manifest | ConvertTo-Json -Depth 6) + "`n"
+    $manifestJson = (($manifest | ConvertTo-Json -Depth 6) -replace "`r`n", "`n" -replace "`r", "`n") + "`n"
     $stageManifestPath = Join-Path $StageRoot "release-manifest.json"
     [System.IO.File]::WriteAllText($stageManifestPath, $manifestJson, $utf8NoBom)
     if ($WriteProjectManifest) {

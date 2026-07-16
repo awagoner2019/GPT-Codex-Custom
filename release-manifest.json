@@ -2,8 +2,8 @@
     "schemaVersion":  1,
     "project":  "GPTCodexCustom",
     "repository":  "awagoner2019/GPT-Codex-Custom",
-    "version":  "0.1.0",
-    "generatedAtUtc":  "2026-07-16T01:30:50.5154511Z",
+    "version":  "0.1.1",
+    "generatedAtUtc":  "2026-07-16T01:46:14.8345383Z",
     "files":  [
                   {
                       "path":  ".gitattributes",
@@ -17,7 +17,7 @@
                   },
                   {
                       "path":  ".github/ISSUE_TEMPLATE/bug_report.yml",
-                      "sha256":  "8C03ED60BB8DB52BB34FD6A7747C1DEBAB924771C62D3AD8CA47F9F6737EE664",
+                      "sha256":  "6A98B5AA07EB3CE112F65E23667670BBDEE94209068AA4E2CF07655E91FA342C",
                       "length":  1757
                   },
                   {
@@ -32,13 +32,13 @@
                   },
                   {
                       "path":  ".github/workflows/publish-release.yml",
-                      "sha256":  "9E74F515D98508AA92CAA1AF18B00F186A10EC68ACBBA95727D64B43AB11C358",
-                      "length":  1568
+                      "sha256":  "7365CE14D4ABB7391163B957B371AFB007EDE172A3C40C42ADF328A89CEE19A4",
+                      "length":  1594
                   },
                   {
                       "path":  ".github/workflows/source-check.yml",
-                      "sha256":  "05DE4BFFFBBF748D44E9B6765953717E960CF972D756B2151317553BCD4304DD",
-                      "length":  1270
+                      "sha256":  "F8E0359327FCC8950BBF9A601E3B3B5CED1769C0179A4AA1C8B911EF70E8C8BF",
+                      "length":  1296
                   },
                   {
                       "path":  ".gitignore",
@@ -122,12 +122,12 @@
                   },
                   {
                       "path":  "package.json",
-                      "sha256":  "770B9A149DA18E423B1B1C0F2B1609B2DE0A4285E66259D50AEE276EFE15A7D2",
+                      "sha256":  "811CA75410C885ADB339FAF43F1240D0C6753C114FFD6948E8EA81A417EF43DD",
                       "length":  3127
                   },
                   {
                       "path":  "package-lock.json",
-                      "sha256":  "FB0826A1D80B6E3B2B4E838C5368A0C3A6712B1B1C7BEB92BFA5561F2AD8888F",
+                      "sha256":  "26DCA24F36E000AC0C9C08B2030A3EE7C29B42AAEDECC5490B05F5CA2722D821",
                       "length":  5834
                   },
                   {
@@ -162,8 +162,8 @@
                   },
                   {
                       "path":  "scripts/New-UpdatePackage.ps1",
-                      "sha256":  "82355A721DBAD0983258C036185E7107C776E29A6A517E12A329A61C227192B4",
-                      "length":  6045
+                      "sha256":  "09EA1738D1F56D15D7C9E3F2842F279738FAB3788644C0A9EBDE1A883A74CD45",
+                      "length":  6089
                   },
                   {
                       "path":  "scripts/Sync-Upstream.ps1",

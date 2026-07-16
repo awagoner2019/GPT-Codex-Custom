@@ -47,4 +47,5 @@ jobs:
           if ($failed) { throw "PowerShell parse checks failed." }
 
       - name: Verify updater and public package boundary
+        shell: powershell
         run: npm run verify:update
