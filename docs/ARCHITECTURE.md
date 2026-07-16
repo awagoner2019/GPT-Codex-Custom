@@ -65,10 +65,16 @@ CSS/DOM enhancement is insufficient. They expose native product/navigation,
 Chat history/session/profile and global conversation search state; register
 Chat, Work, and Codex messages; forward server/composer token usage; expose the
 filtered Work/Codex model catalog and native composer selection callback; and
-support Chat message branching, account-backed conversation deletion, plus the
-native image attachment composer. Every bridge
+support Chat message branching, account-backed conversation management, plus
+the native image attachment composer. Every bridge
 requires exactly one known upstream byte sequence, so an upstream layout change
 fails the isolated rebuild instead of patching an uncertain target.
+
+Generated-image thumbnail clicks are captured only while Chat mode is active.
+They open a custom modal viewer instead of the combined app's conflicting side
+panel path. The viewer keeps the source image at full fidelity, supports zoom,
+Escape/backdrop/close-button dismissal, traps focus while open, restores focus
+to the thumbnail, and passes Edit image back to the native attachment bridge.
 
 The custom model matrix replaces the visible shipped model trigger in all three
 product modes. In Work/Codex, the exact native trigger remains mounted at its
@@ -143,14 +149,17 @@ snippets, cursor pagination supplies Load more, and selection returns through
 the native conversation callback. Loaded-title filtering is only a fallback
 when the native search bridge is unavailable.
 
-### Native Chat deletion
+### Native Chat management
 
-The custom rail's saved-chat action menu calls the shipped conversation service's
-`delete` method only after an explicit confirmation. The renderer removes the
-deleted row and records a short-lived tombstone so a stale query snapshot cannot
-immediately reinsert it; the tombstone clears once the authoritative history no
-longer contains that conversation. The action suite verifies the full menu,
-dialog, and bridge payload through a non-destructive dry-run branch.
+The custom rail's saved-chat action menu calls the shipped conversation service
+for Share, Rename, Pin/Unpin, Archive, and Delete. Share requires an explicit
+public-link confirmation and returns the account-backed anonymous share URL;
+Delete retains its separate destructive confirmation. Rename and Pin reconcile
+the local rail immediately after native success. Archive removes the row and
+holds a short-lived local tombstone until authoritative history catches up.
+Delete uses the same stale-snapshot protection. The action suite invokes every
+visible menu path and validates its bridge payload through non-destructive
+dry-run branches.
 
 ### Advanced Voice boundary
 
@@ -184,13 +193,15 @@ native choice before it exits.
 
 The separate `npm run self-test` action suite deliberately exercises native
 behavior. It opens multiple account conversations, creates a new local chat,
-runs a real global-search query, validates the edit form through its real
-conversation mapping and branch payload without submitting, visits each native
-destination, and switches through Work and Codex while checking live HUD mode
-attribution. Its generated-image probe uploads a synthetic PNG through the
-native attachment service in temporary mode, requires a ready attachment and
-the `picture_v2` hint, then removes the attachment and restores the prior hint.
-No chat message is sent.
+runs a real global-search query, invokes every saved-chat menu path through its
+non-mutating bridge branch, validates the edit form through its real conversation
+mapping and branch payload without submitting, visits each native destination,
+and switches through Work and Codex while checking live HUD mode attribution.
+Its generated-image probe opens, closes, and reopens the full-screen viewer,
+verifies focus restoration, then uploads a synthetic PNG through the native
+attachment service in temporary mode. It requires a ready attachment and the
+`picture_v2` hint, removes the attachment, and restores the prior hint. No chat
+message is sent and no conversation/share state is changed.
 
 The copied executable remains byte-identical to upstream. Only the copied
 `app.asar` and copied `owl-app.ini` change. The latter assigns the custom build

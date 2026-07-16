@@ -734,6 +734,7 @@ $PatchedQuickChat = @(Get-ChildItem -LiteralPath (Join-Path $ProjectRoot "work\p
     (Get-Content -Raw -LiteralPath $_.FullName).Contains("GPT_CODEX_CUSTOM_IMAGE_COMPOSER")
 })
 $PatchedChatGptThread = @(Get-ChildItem -LiteralPath (Join-Path $ProjectRoot "work\patched-src\webview\assets") -Filter "chatgpt-thread-visibility-*.js")
+$PatchedGeneratedImagePreview = @(Get-ChildItem -LiteralPath (Join-Path $ProjectRoot "work\patched-src\webview\assets") -Filter "generated-image-preview-*.js")
 $PatchedLocalTurn = @(Get-ChildItem -LiteralPath (Join-Path $ProjectRoot "work\patched-src\webview\assets") -Filter "local-conversation-turn-*.js")
 $PatchedTokenUsage = @(Get-ChildItem -LiteralPath (Join-Path $ProjectRoot "work\patched-src\webview\assets") -Filter "app-server-manager-signals-*.js")
 $PatchedComposerToken = @(Get-ChildItem -LiteralPath (Join-Path $ProjectRoot "work\patched-src\webview\assets") -Filter "composer-*.js" | Where-Object {
@@ -783,6 +784,31 @@ $PatchedQuickChatText = if ($PatchedQuickChat.Count -eq 1) {
 } else {
     ""
 }
+$PatchedAppMainText = if ($PatchedAppMain.Count -eq 1) {
+    Get-Content -Raw -LiteralPath $PatchedAppMain[0].FullName
+} else {
+    ""
+}
+$NativeChatManagementBridgeContractPresent = ($PatchedAppMain.Count -eq 1)
+foreach ($requiredToken in @(
+    "archiveConversation",
+    "deleteConversation",
+    "pinConversation",
+    "renameConversation",
+    "shareConversation",
+    "setArchived",
+    "setPinned",
+    "createShareLink",
+    "updateShareLink"
+)) {
+    $NativeChatManagementBridgeContractPresent = (
+        $NativeChatManagementBridgeContractPresent -and $PatchedAppMainText.Contains($requiredToken)
+    )
+}
+$NativeChatManagementBridgeContractPresent = (
+    $NativeChatManagementBridgeContractPresent -and
+    $MaintainedCustomJsText.Contains("conversationMenuFullActionSetVisible")
+)
 $GeneratedImageDialogRelativeRule = '(?is)\.gpt-codex-custom-generated-image-dialog\s*\{[^}]*\bposition\s*:\s*relative(?:\s*!important)?\s*(?:;|})'
 $ChatScrollProbeContractPresent = (
     $MaintainedCustomJsText.Contains("GPT_CODEX_CUSTOM_CHAT_SCROLL_PROBE") -and
@@ -932,8 +958,11 @@ $results = [ordered]@{
     persistentProductSelectorBridge = ($PatchedAppMain.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedAppMain[0].FullName).Contains("GPT_CODEX_CUSTOM_NATIVE_PRODUCT_MODES") -and (Get-Content -Raw -LiteralPath $CustomJs).Contains("gptCodexCustomProductSelector"))
     nativeChatSearchIntegrated = ($PatchedAppMain.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedAppMain[0].FullName).Contains("GPT_CODEX_CUSTOM_CHAT_SEARCH") -and (Get-Content -Raw -LiteralPath $CustomJs).Contains("GPT_CODEX_CUSTOM_SYNC_CHAT_SEARCH"))
     nativeChatDeletionIntegrated = ($PatchedAppMain.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedAppMain[0].FullName).Contains("GPT_CODEX_CUSTOM_CHAT_ACTIONS") -and (Get-Content -Raw -LiteralPath $PatchedAppMain[0].FullName).Contains("deleteConversation") -and (Get-Content -Raw -LiteralPath $CustomJs).Contains("openChatDeleteDialog"))
+    nativeChatManagementIntegrated = $NativeChatManagementBridgeContractPresent
     sentMessageEditingIntegrated = ($PatchedChatGptThread.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedChatGptThread[0].FullName).Contains("onEditMessage") -and (Get-Content -Raw -LiteralPath $PatchedChatGptThread[0].FullName).Contains("GPT_CODEX_CUSTOM_EDIT_DRY_RUN"))
+    messageEditCancelGuardIntegrated = ($PatchedGeneratedImagePreview.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedGeneratedImagePreview[0].FullName).Contains("GPTCodexCancelGuard.current"))
     generatedImageEditingIntegrated = ($PatchedQuickChat.Count -eq 1 -and (Get-Content -Raw -LiteralPath $CustomJs).Contains("stageGeneratedImageForEditing"))
+    generatedImageFullViewIntegrated = ($MaintainedCustomJsText.Contains("openGeneratedImageViewer") -and $MaintainedCustomJsText.Contains("handleGeneratedImagePreviewClick") -and $MaintainedCustomCssText.Contains(".gpt-codex-custom-image-viewer"))
     nativeChatModelPickerBridgeIntegrated = ($PatchedQuickChat.Count -eq 1 -and $PatchedQuickChatText.Contains("GPTCodexModelQuery=s(GPTCodexChatModelsQuery)") -and $PatchedQuickChatText.Contains("GPTCodexSelectedModel=u(GPTCodexSelectedChatModel,T)") -and $PatchedQuickChatText.Contains("GPTCodexSelectChatModel") -and $PatchedQuickChatText.Contains("GPT_CODEX_CUSTOM_CHAT_MODEL_PICKER") -and $PatchedQuickChatText.Contains("GPT_CODEX_CUSTOM_SYNC_CHAT_MODEL_PICKER"))
     nativeWorkCodexModelPickerBridgeIntegrated = ($PatchedComposerToken.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedComposerToken[0].FullName).Contains("GPT_CODEX_CUSTOM_NATIVE_MODEL_PICKER") -and (Get-Content -Raw -LiteralPath $PatchedComposerToken[0].FullName).Contains("GPT_CODEX_CUSTOM_SYNC_NATIVE_MODEL_PICKER") -and (Get-Content -Raw -LiteralPath $PatchedComposerToken[0].FullName).Contains("GPT_CODEX_CUSTOM_OPEN_MODEL_PICKER") -and (Get-Content -Raw -LiteralPath $PatchedComposerToken[0].FullName).Contains("The selected model and effort are not available in the active native model snapshot") -and (Get-Content -Raw -LiteralPath $PatchedComposerToken[0].FullName).Contains("GPTCodexSetFastEnabled") -and (Get-Content -Raw -LiteralPath $PatchedComposerToken[0].FullName).Contains('setFastEnabled:GPTCodexSetFastEnabled'))
     chatSessionInitialScrollModeForwarded = ($PatchedQuickChat.Count -eq 1 -and $PatchedQuickChatText.Contains('GPT_CODEX_CUSTOM_SYNC_SESSION?.({conversationId:T,initialScrollMode:D,title:O})'))
@@ -1000,6 +1029,7 @@ if ($RequireChatReady) {
     $results.chatAccountControlReady = ($diagnostics.customSidebarAccountReady -eq $true)
     $results.nativeChatSearchReady = ($diagnostics.customSidebarNativeSearchReady -eq $true)
     $results.nativeChatDeleteReady = ($diagnostics.customSidebarNativeDeleteReady -eq $true)
+    $results.nativeChatManagementReady = ($diagnostics.customSidebarNativeManagementReady -eq $true -and [int]$diagnostics.customSidebarNativeActionCount -eq 5)
 }
 
 if ($RequireChatActions) {
@@ -1015,6 +1045,7 @@ if ($RequireChatActions) {
     $results.messageEditSubmitDryRunWorks = ($selfTest.messageEditDryRunWorks -eq $true -and $selfTest.messageEditSubmitClosesEditor -eq $true)
     $results.generatedImageEditControlWorks = ($selfTest.generatedImageEditControlVisible -eq $true)
     $results.generatedImageEditBridgeWorks = ($selfTest.generatedImageEditBridgeReady -eq $true)
+    $results.generatedImageFullViewWorks = ($selfTest.generatedImageFullViewOpens -eq $true -and $selfTest.generatedImageFullViewCloses -eq $true -and $selfTest.generatedImageFullViewRestoresInteraction -eq $true)
     $results.generatedImageNativeStageWorks = ($selfTest.generatedImageNativeStageWorks -eq $true)
     $results.generatedImageEditPipelineWorks = ($selfTest.generatedImageEditPipelineWorks -eq $true)
     $results.tokenHudContractWorks = ($selfTest.tokenHudContractWorks -eq $true)
@@ -1025,9 +1056,14 @@ if ($RequireChatActions) {
     $results.productModeCallbacksWork = ($selfTest.nativeProductModeBridgeReady -eq $true)
     $results.productOptionsRespectBridgeReadiness = ($selfTest.productOptionsRespectBridgeReadiness -eq $true)
     $results.nativeChatSearchContractWorks = ($selfTest.nativeChatSearchFakeBridgeWorks -eq $true -and $selfTest.nativeChatSearchBridgeReady -eq $true -and $selfTest.nativeChatSearchQueryWorks -eq $true)
+    $results.nativeChatManagementBridgeWorks = ($selfTest.nativeChatManagementBridgeReady -eq $true)
     $results.nativeChatDeleteBridgeWorks = ($selfTest.nativeChatDeleteBridgeReady -eq $true)
     $results.conversationMenuControlWorks = ($selfTest.conversationMenuControlVisible -eq $true)
-    $results.conversationMenuWorks = ($selfTest.conversationMenuOpens -eq $true)
+    $results.conversationMenuWorks = ($selfTest.conversationMenuOpens -eq $true -and $selfTest.conversationMenuFullActionSetVisible -eq $true)
+    $results.chatRenameDryRunWorks = ($selfTest.chatRenameDryRunWorks -eq $true)
+    $results.chatPinDryRunWorks = ($selfTest.chatPinDryRunWorks -eq $true)
+    $results.chatArchiveDryRunWorks = ($selfTest.chatArchiveDryRunWorks -eq $true)
+    $results.chatShareDryRunWorks = ($selfTest.chatShareDryRunWorks -eq $true)
     $results.deleteConfirmationWorks = ($selfTest.deleteConfirmationOpens -eq $true)
     $results.deleteCancelWorks = ($selfTest.deleteCancelPreservesChat -eq $true)
     $results.deleteDryRunWorks = ($selfTest.deleteDryRunWorks -eq $true -and $selfTest.deleteDryRunPreservesChat -eq $true)

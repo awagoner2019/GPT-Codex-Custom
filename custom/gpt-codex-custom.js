@@ -42,9 +42,9 @@ const BUILD_INFO = Object.freeze({
     "persistent-product-selector",
     "sent-message-editing",
     "generated-image-editing",
-    "native-generated-image-preview",
+    "reliable-generated-image-viewer",
     "native-chat-search",
-    "native-chat-deletion",
+    "native-chat-management",
     "token-usage-hud",
     "local-cross-mode-pinboard",
     "native-chat-destinations",
@@ -61,6 +61,13 @@ const CHAT_PRODUCT_MENU_OPTION_SELECTOR = '[role="menuitemradio"][data-mode]';
 const CHAT_SELF_TEST_STORAGE_KEY = "gpt-codex-custom.self-test-attempt";
 const CHAT_SEARCH_DEBOUNCE_MS = 250;
 const CHAT_SEARCH_LIMIT = 20;
+const CHAT_ACTION_BRIDGE_KEYS = Object.freeze([
+  "archiveConversation",
+  "deleteConversation",
+  "pinConversation",
+  "renameConversation",
+  "shareConversation",
+]);
 const CHAT_AUXILIARY_ROUTES = Object.freeze({
   library: "/library",
   plugins: "/plugins",
@@ -91,7 +98,14 @@ let chatSearchQuery = "";
 let chatSearchDebounceTimer = 0;
 let chatSearchRequestSequence = 0;
 let nativeChatSearch = Object.freeze({ available: false, search: null });
-let nativeChatActions = Object.freeze({ available: false, deleteConversation: null });
+let nativeChatActions = Object.freeze({
+  archiveConversation: null,
+  available: false,
+  deleteConversation: null,
+  pinConversation: null,
+  renameConversation: null,
+  shareConversation: null,
+});
 let nativeChatSearchResults = [];
 let nativeChatSearchCursor = null;
 let nativeChatSearchLoading = false;
@@ -120,17 +134,28 @@ let nativeHistoryPagination = Object.freeze({
   isFetchingNextPage: false,
 });
 const chatHistoryById = new Map();
+const archivedChatConversationIds = new Set();
 const deletedChatConversationIds = new Set();
 let chatConversationMenuElement = null;
 let chatConversationMenuTrigger = null;
+let chatActionDialogElement = null;
+let chatActionDialogConversationId = null;
+let chatActionDialogFocusGeneration = 0;
+let chatActionDialogOpener = null;
 let chatDeleteDialogElement = null;
 let chatDeleteDialogConversationId = null;
 let chatDeleteDialogFocusGeneration = 0;
 let chatDeleteDialogOpener = null;
+let generatedImageViewerElement = null;
+let generatedImageViewerOpener = null;
+let generatedImageViewerSourceImage = null;
+let generatedImageViewerScale = 1;
 
 const CHAT_ICON_PATHS = Object.freeze({
   account:
     '<circle cx="12" cy="8" r="3.25"></circle><path d="M5.75 19c.55-3.35 2.6-5 6.25-5s5.7 1.65 6.25 5"></path>',
+  archive:
+    '<path d="M4 7.5h16v12H4z"></path><path d="M3 4.5h18v3H3z"></path><path d="M9 11.5h6"></path>',
   chevron: '<path d="m9 6 6 6-6 6"></path>',
   collapse:
     '<rect x="3.5" y="4" width="17" height="16" rx="3"></rect><path d="M9 4v16"></path>',
@@ -142,14 +167,20 @@ const CHAT_ICON_PATHS = Object.freeze({
     '<circle cx="5" cy="12" r="1.25" fill="currentColor" stroke="none"></circle><circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none"></circle><circle cx="19" cy="12" r="1.25" fill="currentColor" stroke="none"></circle>',
   newChat:
     '<path d="M13.5 5.5 18.5 10.5"></path><path d="m7 17 1.2-4.4L16.8 4a2.1 2.1 0 0 1 3 3l-8.6 8.6L7 17Z"></path><path d="M12 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20h11a2.5 2.5 0 0 0 2.5-2.5V12"></path>',
+  pin:
+    '<path d="m14.5 4 5.5 5.5-3 1.5-4 4-.5 4.5-2-2-4 4-1-1 4-4-2-2 4.5-.5 4-4z"></path>',
   plugins:
     '<path d="M8.5 3.5v4h-4"></path><path d="M15.5 20.5v-4h4"></path><path d="M20.5 8.5h-4v-4"></path><path d="M3.5 15.5h4v4"></path><circle cx="12" cy="12" r="4"></circle>',
   projects:
     '<path d="M3.5 7.5h6l2-2h9v13H3.5z"></path><path d="M3.5 10.5h17"></path>',
+  rename:
+    '<path d="m4 20 4.25-1 10.5-10.5a2.1 2.1 0 0 0-3-3L5.25 16z"></path><path d="m13.5 7.5 3 3"></path>',
   scheduled:
     '<circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l-3 2"></path>',
   search:
     '<circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.5 15.5 4 4"></path>',
+  share:
+    '<path d="M12 15V4"></path><path d="m8 8 4-4 4 4"></path><path d="M5 12v7h14v-7"></path>',
 });
 
 function getInitialProductModeDecision({
@@ -1218,36 +1249,58 @@ function syncNativeChatSearch(searchBridge) {
 }
 
 function getNativeChatActions() {
-  if (
-    typeof nativeChatActions.deleteConversation === "function" ||
-    nativeChatActions.available === true
-  ) {
+  if (nativeChatActions.available === true || CHAT_ACTION_BRIDGE_KEYS.some(
+    (key) => typeof nativeChatActions[key] === "function",
+  )) {
     return nativeChatActions;
   }
   const directBridge = globalThis.GPT_CODEX_CUSTOM_CHAT_ACTIONS;
   if (!directBridge || typeof directBridge !== "object") return nativeChatActions;
-  return {
+  return Object.freeze({
     available: directBridge.available === true,
-    deleteConversation:
-      typeof directBridge.deleteConversation === "function"
-        ? directBridge.deleteConversation
-        : null,
-  };
+    ...Object.fromEntries(
+      CHAT_ACTION_BRIDGE_KEYS.map((key) => [
+        key,
+        typeof directBridge[key] === "function" ? directBridge[key] : null,
+      ]),
+    ),
+  });
+}
+
+function isNativeChatActionAvailable(action, actions = getNativeChatActions()) {
+  return actions?.available === true && typeof actions[action] === "function";
+}
+
+function isNativeChatManagementAvailable(actions = getNativeChatActions()) {
+  return CHAT_ACTION_BRIDGE_KEYS.every((key) => isNativeChatActionAvailable(key, actions));
+}
+
+function isAnyNativeChatActionAvailable(actions = getNativeChatActions()) {
+  return CHAT_ACTION_BRIDGE_KEYS.some((key) => isNativeChatActionAvailable(key, actions));
 }
 
 function isNativeChatDeleteAvailable(actions = getNativeChatActions()) {
-  return actions?.available === true && typeof actions.deleteConversation === "function";
+  return isNativeChatActionAvailable("deleteConversation", actions);
 }
 
 function syncNativeChatActions(actionsBridge) {
   const next = actionsBridge && typeof actionsBridge === "object" ? actionsBridge : {};
-  const wasAvailable = isNativeChatDeleteAvailable(nativeChatActions);
+  const previousAvailability = CHAT_ACTION_BRIDGE_KEYS.map(
+    (key) => typeof nativeChatActions[key] === "function",
+  ).join("");
   nativeChatActions = Object.freeze({
     available: next.available === true,
-    deleteConversation:
-      typeof next.deleteConversation === "function" ? next.deleteConversation : null,
+    ...Object.fromEntries(
+      CHAT_ACTION_BRIDGE_KEYS.map((key) => [
+        key,
+        typeof next[key] === "function" ? next[key] : null,
+      ]),
+    ),
   });
-  if (wasAvailable !== isNativeChatDeleteAvailable(nativeChatActions)) {
+  const nextAvailability = CHAT_ACTION_BRIDGE_KEYS.map(
+    (key) => typeof nativeChatActions[key] === "function",
+  ).join("");
+  if (previousAvailability !== nextAvailability) {
     scheduleChatSidebarRender();
   }
   scheduleDiagnostics();
@@ -1279,6 +1332,338 @@ function isSafeChatFocusTarget(element) {
   return style.display !== "none" && style.visibility !== "hidden" && element.getClientRects().length > 0;
 }
 
+function getChatDialogFocusableElements(dialog) {
+  if (!(dialog instanceof Element)) return [];
+  return [
+    ...dialog.querySelectorAll(
+      'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+    ),
+  ].filter(isSafeChatFocusTarget);
+}
+
+function trapChatDialogFocus(event, backdrop, dialogSelector) {
+  if (event.key !== "Tab" || !backdrop) return false;
+  const dialog = backdrop.querySelector(dialogSelector);
+  if (!(dialog instanceof HTMLElement)) return false;
+  const focusableElements = getChatDialogFocusableElements(dialog);
+  const first = focusableElements[0] ?? null;
+  const last = focusableElements.at(-1) ?? null;
+  const active = document.activeElement;
+  event.stopPropagation();
+  if (!first || !last) {
+    event.preventDefault();
+    dialog.focus({ preventScroll: true });
+    return true;
+  }
+  if (!dialog.contains(active) || (event.shiftKey && active === first)) {
+    event.preventDefault();
+    (event.shiftKey ? last : first).focus({ preventScroll: true });
+  } else if (!event.shiftKey && active === last) {
+    event.preventDefault();
+    first.focus({ preventScroll: true });
+  }
+  return true;
+}
+
+function findChatActionDialogFocusTarget(opener, conversationId) {
+  const conversationRow = [...document.querySelectorAll(
+    ".gpt-codex-custom-chat-sidebar-item-row",
+  )].find((row) => row.dataset.conversationId === conversationId);
+  return [
+    opener,
+    conversationRow?.querySelector('[data-gpt-codex-custom-conversation-menu-trigger="true"]'),
+    conversationRow?.querySelector(".gpt-codex-custom-chat-sidebar-item"),
+    document.querySelector('[data-gpt-codex-custom-new-chat="true"]'),
+  ].find(isSafeChatFocusTarget);
+}
+
+function closeChatActionDialog({ restoreFocus = true } = {}) {
+  const backdrop = chatActionDialogElement;
+  if (!backdrop) return;
+  const opener = chatActionDialogOpener;
+  const conversationId = chatActionDialogConversationId;
+  const focusGeneration = ++chatActionDialogFocusGeneration;
+  backdrop.remove();
+  chatActionDialogElement = null;
+  chatActionDialogConversationId = null;
+  chatActionDialogOpener = null;
+  if (!restoreFocus) return;
+  window.setTimeout(() => {
+    if (focusGeneration !== chatActionDialogFocusGeneration || chatActionDialogElement) return;
+    findChatActionDialogFocusTarget(opener, conversationId)?.focus({ preventScroll: true });
+  }, 0);
+}
+
+function updateConversationTitleInCustomState(conversationId, title) {
+  const conversation = chatHistoryById.get(conversationId);
+  if (conversation) chatHistoryById.set(conversationId, { ...conversation, title });
+  nativeChatSearchResults = nativeChatSearchResults.map((item) =>
+    item.conversationId === conversationId
+      ? { ...item, searchTitle: title, title }
+      : item,
+  );
+  scheduleChatSidebarRender();
+  scheduleDiagnostics();
+}
+
+function updateConversationPinnedInCustomState(conversationId, pinned) {
+  const conversation = chatHistoryById.get(conversationId);
+  if (conversation) {
+    chatHistoryById.set(conversationId, {
+      ...conversation,
+      kind: pinned ? "pinned" : "recent",
+      pinned,
+    });
+  }
+  scheduleChatSidebarRender();
+  scheduleDiagnostics();
+}
+
+function removeArchivedConversationFromCustomState(conversationId) {
+  archivedChatConversationIds.add(conversationId);
+  chatHistoryById.delete(conversationId);
+  nativeChatSearchResults = nativeChatSearchResults.filter(
+    (item) => item.conversationId !== conversationId,
+  );
+  if (activeChatConversationId === conversationId) {
+    activeChatConversationId = null;
+    startNewNativeChat();
+  }
+  scheduleChatSidebarRender();
+  scheduleDiagnostics();
+}
+
+async function copyCustomText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const input = document.createElement("textarea");
+    input.value = text;
+    input.setAttribute("readonly", "");
+    input.style.position = "fixed";
+    input.style.opacity = "0";
+    document.body.appendChild(input);
+    input.select();
+    let copied = false;
+    try {
+      copied = document.execCommand("copy");
+    } catch {
+      copied = false;
+    }
+    input.remove();
+    return copied;
+  }
+}
+
+function openChatActionDialog(conversation, action) {
+  if (!['rename', 'share'].includes(action)) return;
+  const bridgeAction = action === "rename" ? "renameConversation" : "shareConversation";
+  if (!isNativeChatActionAvailable(bridgeAction)) {
+    showCustomChatStatus(`${action === "rename" ? "Rename" : "Share"} is unavailable because its native bridge is not connected.`, {
+      error: true,
+    });
+    return;
+  }
+
+  const opener = chatConversationMenuTrigger ?? document.activeElement;
+  closeChatConversationMenu();
+  closeChatActionDialog({ restoreFocus: false });
+  closeChatDeleteDialog({ restoreFocus: false });
+  const focusGeneration = ++chatActionDialogFocusGeneration;
+
+  const backdrop = document.createElement("div");
+  backdrop.className = "gpt-codex-custom-chat-action-backdrop";
+  backdrop.dataset.action = action;
+  const dialog = document.createElement("section");
+  dialog.className = "gpt-codex-custom-chat-action-dialog";
+  dialog.dataset.action = action;
+  dialog.dataset.conversationId = conversation.conversationId;
+  dialog.setAttribute("aria-modal", "true");
+  dialog.setAttribute("role", "dialog");
+  dialog.tabIndex = -1;
+
+  const title = document.createElement("h2");
+  title.id = `gpt-codex-custom-chat-${action}-title`;
+  title.textContent = action === "rename" ? "Rename chat" : "Share chat";
+  dialog.setAttribute("aria-labelledby", title.id);
+  const description = document.createElement("p");
+  description.id = `gpt-codex-custom-chat-${action}-description`;
+  description.textContent = action === "rename"
+    ? "Choose a short, recognizable title."
+    : "Create a public, anonymous link to this conversation. Anyone with the link can view it.";
+  dialog.setAttribute("aria-describedby", description.id);
+  const status = document.createElement("p");
+  status.className = "gpt-codex-custom-chat-action-status";
+  status.setAttribute("aria-live", "polite");
+
+  const field = document.createElement("div");
+  field.className = "gpt-codex-custom-chat-action-field";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "gpt-codex-custom-chat-action-input";
+  input.setAttribute("aria-label", action === "rename" ? "Chat title" : "Public share link");
+  if (action === "rename") {
+    input.maxLength = 160;
+    input.value = conversation.title;
+  } else {
+    input.readOnly = true;
+    field.hidden = true;
+  }
+  field.appendChild(input);
+
+  const actions = document.createElement("div");
+  actions.className = "gpt-codex-custom-chat-action-buttons";
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.className = "gpt-codex-custom-chat-action-cancel";
+  cancel.textContent = action === "share" ? "Close" : "Cancel";
+  const confirm = document.createElement("button");
+  confirm.type = "button";
+  confirm.className = "gpt-codex-custom-chat-action-confirm";
+  confirm.dataset.gptCodexCustomChatActionConfirm = action;
+  confirm.textContent = action === "rename" ? "Save" : "Create link";
+
+  const setPending = (pending) => {
+    dialog.dataset.pending = String(pending);
+    cancel.disabled = pending;
+    confirm.disabled = pending || (action === "rename" && input.value.trim().length === 0);
+    input.disabled = pending;
+  };
+  input.addEventListener("input", () => setPending(false));
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !confirm.disabled) {
+      event.preventDefault();
+      confirm.click();
+    }
+  });
+  cancel.addEventListener("click", () => closeChatActionDialog());
+  backdrop.addEventListener("click", (event) => {
+    if (event.target === backdrop && dialog.dataset.pending !== "true") {
+      closeChatActionDialog();
+    }
+  });
+  confirm.addEventListener("click", async () => {
+    if (confirm.disabled) return;
+    if (action === "share" && dialog.dataset.shareUrl) {
+      const copied = await copyCustomText(dialog.dataset.shareUrl);
+      status.dataset.error = String(!copied);
+      status.textContent = copied ? "Link copied." : "Copy failed. Select the link and copy it manually.";
+      return;
+    }
+
+    const nativeAction = getNativeChatActions()[bridgeAction];
+    if (typeof nativeAction !== "function") return;
+    setPending(true);
+    status.dataset.error = "false";
+    status.textContent = action === "rename" ? "Renaming chat..." : "Creating public link...";
+    try {
+      const result = action === "rename"
+        ? await nativeAction(conversation.conversationId, input.value.trim())
+        : await nativeAction(conversation.conversationId, conversation.title);
+      if (action === "rename") {
+        if (result?.renamed !== true) throw new Error("The native Chat rename action did not confirm the update.");
+        globalThis.GPT_CODEX_CUSTOM_CHAT_ACTION_UI_RESULT = {
+          action,
+          conversationId: conversation.conversationId,
+          dryRun: result.dryRun === true,
+        };
+        if (result.dryRun !== true) {
+          updateConversationTitleInCustomState(conversation.conversationId, result.title ?? input.value.trim());
+          showCustomChatStatus("Chat renamed.");
+        }
+        closeChatActionDialog();
+        return;
+      }
+
+      if (result?.shared !== true || typeof result.shareUrl !== "string") {
+        throw new Error("The native Chat share action did not return a public link.");
+      }
+      globalThis.GPT_CODEX_CUSTOM_CHAT_ACTION_UI_RESULT = {
+        action,
+        conversationId: conversation.conversationId,
+        dryRun: result.dryRun === true,
+        shareUrl: result.shareUrl,
+      };
+      if (result.dryRun === true) {
+        closeChatActionDialog();
+        return;
+      }
+      dialog.dataset.shareUrl = result.shareUrl;
+      input.disabled = false;
+      input.value = result.shareUrl;
+      field.hidden = false;
+      confirm.textContent = "Copy link";
+      cancel.disabled = false;
+      dialog.dataset.pending = "false";
+      const copied = await copyCustomText(result.shareUrl);
+      status.dataset.error = String(!copied);
+      status.textContent = copied ? "Public link created and copied." : "Public link created. Copy it below.";
+      input.focus({ preventScroll: true });
+      input.select();
+    } catch (error) {
+      setPending(false);
+      status.dataset.error = "true";
+      status.textContent = error?.message ?? `The chat could not be ${action === "rename" ? "renamed" : "shared"}.`;
+      showCustomChatStatus(`The chat could not be ${action === "rename" ? "renamed" : "shared"}. Please try again.`, {
+        error: true,
+      });
+    }
+  });
+
+  actions.append(cancel, confirm);
+  dialog.append(title, description, field, status, actions);
+  backdrop.appendChild(dialog);
+  document.body.appendChild(backdrop);
+  chatActionDialogElement = backdrop;
+  chatActionDialogConversationId = conversation.conversationId;
+  chatActionDialogOpener = opener instanceof HTMLElement ? opener : null;
+  setPending(false);
+  queueMicrotask(() => {
+    if (focusGeneration !== chatActionDialogFocusGeneration || chatActionDialogElement !== backdrop) return;
+    (action === "rename" ? input : confirm).focus({ preventScroll: true });
+    if (action === "rename") input.select();
+  });
+}
+
+async function executeImmediateChatAction(conversation, action) {
+  const bridgeAction = action === "pin" ? "pinConversation" : "archiveConversation";
+  const nativeAction = getNativeChatActions()[bridgeAction];
+  if (typeof nativeAction !== "function") {
+    showCustomChatStatus(`${action === "pin" ? "Pin" : "Archive"} is unavailable because its native bridge is not connected.`, {
+      error: true,
+    });
+    return;
+  }
+  closeChatConversationMenu();
+  const nextPinned = !conversation.pinned;
+  showCustomChatStatus(action === "pin" ? `${nextPinned ? "Pinning" : "Unpinning"} chat...` : "Archiving chat...");
+  try {
+    const result = action === "pin"
+      ? await nativeAction(conversation.conversationId, nextPinned)
+      : await nativeAction(conversation.conversationId);
+    const succeeded = action === "pin" ? result?.pinned === nextPinned : result?.archived === true;
+    if (!succeeded) throw new Error(`The native Chat ${action} action did not confirm the update.`);
+    globalThis.GPT_CODEX_CUSTOM_CHAT_ACTION_UI_RESULT = {
+      action,
+      conversationId: conversation.conversationId,
+      dryRun: result.dryRun === true,
+    };
+    if (result.dryRun === true) return;
+    if (action === "pin") {
+      updateConversationPinnedInCustomState(conversation.conversationId, nextPinned);
+      showCustomChatStatus(nextPinned ? "Chat pinned." : "Chat unpinned.");
+    } else {
+      removeArchivedConversationFromCustomState(conversation.conversationId);
+      showCustomChatStatus("Chat archived.");
+    }
+  } catch (error) {
+    showCustomChatStatus(error?.message ?? `The chat could not be ${action === "pin" ? "pinned" : "archived"}.`, {
+      error: true,
+    });
+  }
+}
+
 function findChatDeleteDialogFocusTarget(opener, conversationId) {
   const conversationRow = [...document.querySelectorAll(
     ".gpt-codex-custom-chat-sidebar-item-row",
@@ -1298,39 +1683,12 @@ function findChatDeleteDialogFocusTarget(opener, conversationId) {
   ].find(isSafeChatFocusTarget);
 }
 
-function getChatDeleteDialogFocusableElements(dialog) {
-  if (!(dialog instanceof Element)) return [];
-  return [
-    ...dialog.querySelectorAll(
-      'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
-    ),
-  ].filter(isSafeChatFocusTarget);
-}
-
 function trapChatDeleteDialogFocus(event) {
-  if (event.key !== "Tab" || !chatDeleteDialogElement) return false;
-  const dialog = chatDeleteDialogElement.querySelector(
+  return trapChatDialogFocus(
+    event,
+    chatDeleteDialogElement,
     ".gpt-codex-custom-chat-delete-dialog",
   );
-  if (!(dialog instanceof HTMLElement)) return false;
-  const focusableElements = getChatDeleteDialogFocusableElements(dialog);
-  const first = focusableElements[0] ?? null;
-  const last = focusableElements.at(-1) ?? null;
-  const active = document.activeElement;
-  event.stopPropagation();
-  if (!first || !last) {
-    event.preventDefault();
-    dialog.focus({ preventScroll: true });
-    return true;
-  }
-  if (!dialog.contains(active) || (event.shiftKey && active === first)) {
-    event.preventDefault();
-    (event.shiftKey ? last : first).focus({ preventScroll: true });
-  } else if (!event.shiftKey && active === last) {
-    event.preventDefault();
-    first.focus({ preventScroll: true });
-  }
-  return true;
 }
 
 function closeChatDeleteDialog({ restoreFocus = true } = {}) {
@@ -1466,6 +1824,7 @@ function openChatDeleteDialog(conversation) {
 
 function openChatConversationMenu(conversation, trigger) {
   closeChatConversationMenu();
+  const nativeActions = getNativeChatActions();
   const menu = document.createElement("div");
   menu.id = "gpt-codex-custom-chat-conversation-menu";
   menu.className = "gpt-codex-custom-chat-conversation-menu";
@@ -1473,28 +1832,84 @@ function openChatConversationMenu(conversation, trigger) {
   menu.setAttribute("aria-label", `Actions for ${conversation.title}`);
   menu.setAttribute("role", "menu");
 
-  const deleteButton = document.createElement("button");
-  deleteButton.type = "button";
-  deleteButton.className = "gpt-codex-custom-chat-conversation-menu-item";
-  deleteButton.dataset.action = "delete";
-  deleteButton.setAttribute("role", "menuitem");
-  deleteButton.append(createChatIcon("delete"), document.createTextNode("Delete chat"));
-  deleteButton.addEventListener("click", () => openChatDeleteDialog(conversation));
-  menu.appendChild(deleteButton);
+  const addItem = ({ action, icon, label, onClick }) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "gpt-codex-custom-chat-conversation-menu-item";
+    button.dataset.action = action;
+    button.disabled = !isNativeChatActionAvailable(`${action}Conversation`, nativeActions);
+    button.setAttribute("role", "menuitem");
+    button.append(createChatIcon(icon), document.createTextNode(label));
+    button.addEventListener("click", onClick);
+    menu.appendChild(button);
+    return button;
+  };
+
+  const firstButton = addItem({
+    action: "share",
+    icon: "share",
+    label: "Share",
+    onClick: () => openChatActionDialog(conversation, "share"),
+  });
+  addItem({
+    action: "rename",
+    icon: "rename",
+    label: "Rename",
+    onClick: () => openChatActionDialog(conversation, "rename"),
+  });
+  addItem({
+    action: "pin",
+    icon: "pin",
+    label: conversation.pinned ? "Unpin chat" : "Pin chat",
+    onClick: () => void executeImmediateChatAction(conversation, "pin"),
+  });
+  addItem({
+    action: "archive",
+    icon: "archive",
+    label: "Archive",
+    onClick: () => void executeImmediateChatAction(conversation, "archive"),
+  });
+  const separator = document.createElement("div");
+  separator.className = "gpt-codex-custom-chat-conversation-menu-separator";
+  separator.setAttribute("role", "separator");
+  menu.appendChild(separator);
+  addItem({
+    action: "delete",
+    icon: "delete",
+    label: "Delete",
+    onClick: () => openChatDeleteDialog(conversation),
+  });
   document.body.appendChild(menu);
 
   const rect = trigger.getBoundingClientRect();
   const width = Math.min(200, window.innerWidth - 16);
+  const height = menu.getBoundingClientRect().height;
   menu.style.width = `${width}px`;
   menu.style.left = `${Math.max(8, Math.min(rect.right - width, window.innerWidth - width - 8))}px`;
-  menu.style.top = `${Math.max(8, Math.min(rect.bottom + 4, window.innerHeight - 60))}px`;
+  menu.style.top = `${Math.max(8, Math.min(rect.bottom + 4, window.innerHeight - height - 8))}px`;
+  menu.addEventListener("keydown", (event) => {
+    const items = [...menu.querySelectorAll('[role="menuitem"]:not(:disabled)')];
+    const currentIndex = items.indexOf(document.activeElement);
+    let nextIndex = -1;
+    if (event.key === "ArrowDown") nextIndex = (currentIndex + 1 + items.length) % items.length;
+    if (event.key === "ArrowUp") nextIndex = (currentIndex - 1 + items.length) % items.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = items.length - 1;
+    if (nextIndex >= 0) {
+      event.preventDefault();
+      items[nextIndex]?.focus();
+    }
+  });
   chatConversationMenuElement = menu;
   chatConversationMenuTrigger = trigger;
   window.setTimeout(
     () => document.addEventListener("pointerdown", dismissChatConversationMenu, true),
     0,
   );
-  queueMicrotask(() => deleteButton.focus());
+  queueMicrotask(() => {
+    const firstEnabled = menu.querySelector('[role="menuitem"]:not(:disabled)');
+    (firstEnabled ?? firstButton).focus();
+  });
 }
 
 function renderChatSidebar() {
@@ -1760,14 +2175,14 @@ function renderChatSidebar() {
       menuTrigger.className = "gpt-codex-custom-chat-conversation-menu-trigger";
       menuTrigger.dataset.gptCodexCustomConversationMenuTrigger = "true";
       menuTrigger.dataset.conversationId = conversation.conversationId;
-      const canDeleteConversation =
-        isNativeChatDeleteAvailable() &&
+      const canManageConversation =
+        isAnyNativeChatActionAvailable() &&
         !conversation.conversationId.startsWith("local-chatgpt:");
-      menuTrigger.disabled = !canDeleteConversation;
+      menuTrigger.disabled = !canManageConversation;
       menuTrigger.setAttribute("aria-haspopup", "menu");
       menuTrigger.setAttribute("aria-label", `More options for ${conversation.title}`);
       menuTrigger.title = menuTrigger.disabled
-        ? "Chat actions are unavailable because the native delete bridge is not connected"
+        ? "Chat actions are unavailable because their native bridge is not connected"
         : `More options for ${conversation.title}`;
       menuTrigger.textContent = "\u2026";
       menuTrigger.addEventListener("click", (event) => {
@@ -1999,10 +2414,16 @@ function reconcileNativeChatHistory(historyById, conversations) {
   for (const conversationId of deletedChatConversationIds) {
     if (!incomingIds.has(conversationId)) deletedChatConversationIds.delete(conversationId);
   }
+  for (const conversationId of archivedChatConversationIds) {
+    if (!incomingIds.has(conversationId)) archivedChatConversationIds.delete(conversationId);
+  }
 
   for (const conversation of conversations) {
     if (!conversation?.conversationId) continue;
-    if (deletedChatConversationIds.has(conversation.conversationId)) {
+    if (
+      deletedChatConversationIds.has(conversation.conversationId) ||
+      archivedChatConversationIds.has(conversation.conversationId)
+    ) {
       if (historyById.delete(conversation.conversationId)) changed = true;
       continue;
     }
@@ -2264,6 +2685,148 @@ async function generatedImageToFile(image) {
   });
 }
 
+function updateGeneratedImageViewerScale(nextScale) {
+  generatedImageViewerScale = Math.min(4, Math.max(0.5, Number(nextScale) || 1));
+  const viewerImage = generatedImageViewerElement?.querySelector(
+    ".gpt-codex-custom-image-viewer-image",
+  );
+  const scaleLabel = generatedImageViewerElement?.querySelector(
+    "[data-gpt-codex-custom-image-viewer-scale]",
+  );
+  if (viewerImage instanceof HTMLElement) {
+    viewerImage.style.setProperty(
+      "--gpt-codex-custom-image-viewer-scale",
+      String(generatedImageViewerScale),
+    );
+  }
+  if (scaleLabel) scaleLabel.textContent = `${Math.round(generatedImageViewerScale * 100)}%`;
+}
+
+function closeGeneratedImageViewer({ restoreFocus = true } = {}) {
+  const viewer = generatedImageViewerElement;
+  if (!viewer) return;
+  const opener = generatedImageViewerOpener;
+  viewer.remove();
+  generatedImageViewerElement = null;
+  generatedImageViewerOpener = null;
+  generatedImageViewerSourceImage = null;
+  generatedImageViewerScale = 1;
+  document.documentElement.removeAttribute("data-gpt-codex-custom-image-viewer-open");
+  if (restoreFocus && isSafeChatFocusTarget(opener)) {
+    queueMicrotask(() => opener.focus({ preventScroll: true }));
+  }
+  scheduleDiagnostics();
+}
+
+function trapGeneratedImageViewerFocus(event) {
+  return trapChatDialogFocus(
+    event,
+    generatedImageViewerElement,
+    ".gpt-codex-custom-image-viewer-dialog",
+  );
+}
+
+function openGeneratedImageViewer(sourceImage, opener) {
+  if (!(sourceImage instanceof HTMLImageElement)) return false;
+  const source = sourceImage.currentSrc || sourceImage.src;
+  if (!source || source === "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==") {
+    showCustomChatStatus("The generated image is still loading.", { error: true });
+    return false;
+  }
+
+  closeGeneratedImageViewer({ restoreFocus: false });
+  const backdrop = document.createElement("div");
+  backdrop.id = "gpt-codex-custom-image-viewer";
+  backdrop.className = "gpt-codex-custom-image-viewer";
+  backdrop.dataset.gptCodexCustomImageViewer = "true";
+  const dialog = document.createElement("section");
+  dialog.className = "gpt-codex-custom-image-viewer-dialog";
+  dialog.setAttribute("aria-label", sourceImage.alt || "Generated image preview");
+  dialog.setAttribute("aria-modal", "true");
+  dialog.setAttribute("role", "dialog");
+  dialog.tabIndex = -1;
+
+  const header = document.createElement("header");
+  header.className = "gpt-codex-custom-image-viewer-header";
+  const title = document.createElement("span");
+  title.className = "gpt-codex-custom-image-viewer-title";
+  title.textContent = sourceImage.alt || "Generated image";
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "gpt-codex-custom-image-viewer-close";
+  close.setAttribute("aria-label", "Close image preview");
+  close.textContent = "\u00d7";
+  close.addEventListener("click", () => closeGeneratedImageViewer());
+  header.append(title, close);
+
+  const viewport = document.createElement("div");
+  viewport.className = "gpt-codex-custom-image-viewer-viewport";
+  const image = document.createElement("img");
+  image.className = "gpt-codex-custom-image-viewer-image";
+  image.alt = sourceImage.alt || "Generated image";
+  image.draggable = false;
+  image.referrerPolicy = sourceImage.referrerPolicy || "no-referrer";
+  image.src = source;
+  viewport.appendChild(image);
+
+  const toolbar = document.createElement("div");
+  toolbar.className = "gpt-codex-custom-image-viewer-toolbar";
+  toolbar.setAttribute("aria-label", "Image preview controls");
+  toolbar.setAttribute("role", "toolbar");
+  const edit = document.createElement("button");
+  edit.type = "button";
+  edit.className = "gpt-codex-custom-image-viewer-edit";
+  edit.setAttribute("aria-label", "Edit image");
+  edit.textContent = "Edit image";
+  edit.addEventListener("click", () => void stageGeneratedImageForEditing(sourceImage, edit));
+  const zoomOut = document.createElement("button");
+  zoomOut.type = "button";
+  zoomOut.setAttribute("aria-label", "Zoom out");
+  zoomOut.textContent = "\u2212";
+  zoomOut.addEventListener("click", () => updateGeneratedImageViewerScale(generatedImageViewerScale - 0.25));
+  const scale = document.createElement("button");
+  scale.type = "button";
+  scale.dataset.gptCodexCustomImageViewerScale = "true";
+  scale.setAttribute("aria-label", "Reset zoom");
+  scale.textContent = "100%";
+  scale.addEventListener("click", () => updateGeneratedImageViewerScale(1));
+  const zoomIn = document.createElement("button");
+  zoomIn.type = "button";
+  zoomIn.setAttribute("aria-label", "Zoom in");
+  zoomIn.textContent = "+";
+  zoomIn.addEventListener("click", () => updateGeneratedImageViewerScale(generatedImageViewerScale + 0.25));
+  toolbar.append(edit, zoomOut, scale, zoomIn);
+
+  dialog.append(header, viewport, toolbar);
+  backdrop.appendChild(dialog);
+  backdrop.addEventListener("click", (event) => {
+    if (event.target === backdrop) closeGeneratedImageViewer();
+  });
+  viewport.addEventListener("dblclick", () => {
+    updateGeneratedImageViewerScale(generatedImageViewerScale === 1 ? 2 : 1);
+  });
+  document.body.appendChild(backdrop);
+  generatedImageViewerElement = backdrop;
+  generatedImageViewerOpener = opener instanceof HTMLElement ? opener : null;
+  generatedImageViewerSourceImage = sourceImage;
+  document.documentElement.dataset.gptCodexCustomImageViewerOpen = "true";
+  updateGeneratedImageViewerScale(1);
+  queueMicrotask(() => close.focus({ preventScroll: true }));
+  scheduleDiagnostics();
+  return true;
+}
+
+function handleGeneratedImagePreviewClick(event) {
+  if (!chatMode || !(event.target instanceof Element)) return;
+  const preview = event.target.closest('button[data-testid="generated-image-preview"]');
+  if (!(preview instanceof HTMLButtonElement) || preview.getAttribute("aria-hidden") === "true") return;
+  const sourceImage = preview.querySelector("img");
+  if (!(sourceImage instanceof HTMLImageElement)) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  openGeneratedImageViewer(sourceImage, preview);
+}
+
 function focusNativeImageComposer(sourceImage) {
   const dialog = sourceImage.closest('[role="dialog"]');
   const closePreview = dialog
@@ -2301,6 +2864,7 @@ async function stageGeneratedImageForEditing(image, button) {
     await composer.stageImage(file);
     document.documentElement.dataset.gptCodexCustomImageEdit = "ready";
     showCustomChatStatus("Image added. Describe the changes you want.");
+    closeGeneratedImageViewer({ restoreFocus: false });
     focusNativeImageComposer(image);
   } catch (error) {
     document.documentElement.dataset.gptCodexCustomImageEdit = "error";
@@ -2357,6 +2921,7 @@ function ensureGeneratedImageEditControls() {
     if (!dialog || dialog.querySelector('[data-gpt-codex-custom-image-edit="preview"]')) {
       continue;
     }
+    if (dialog.closest('[data-gpt-codex-custom-image-viewer="true"]')) continue;
     if (!generatedImageLabels.has(image.alt) && !/generated image/i.test(image.alt)) continue;
     dialog.classList.add("gpt-codex-custom-generated-image-dialog");
     dialog.appendChild(createGeneratedImageEditControl(image, "preview"));
@@ -2742,6 +3307,9 @@ async function runChatSidebarSelfTest() {
     generatedImageEditControlVisible: false,
     generatedImageEditBridgeReady: false,
     generatedImagePreviewLayoutPreserved: false,
+    generatedImageFullViewOpens: false,
+    generatedImageFullViewCloses: false,
+    generatedImageFullViewRestoresInteraction: false,
     generatedImageNativeStageWorks: false,
     generatedImageEditPipelineWorks: false,
     tokenHudContractWorks: false,
@@ -2756,9 +3324,15 @@ async function runChatSidebarSelfTest() {
     nativeChatSearchQueryWorks: false,
     nativeChatSearchError: null,
     nativeChatSearchFakeBridgeWorks: false,
+    nativeChatManagementBridgeReady: false,
     nativeChatDeleteBridgeReady: false,
     conversationMenuControlVisible: false,
     conversationMenuOpens: false,
+    conversationMenuFullActionSetVisible: false,
+    chatRenameDryRunWorks: false,
+    chatPinDryRunWorks: false,
+    chatArchiveDryRunWorks: false,
+    chatShareDryRunWorks: false,
     deleteConfirmationOpens: false,
     deleteCancelPreservesChat: false,
     deleteDryRunWorks: false,
@@ -2899,11 +3473,12 @@ async function runChatSidebarSelfTest() {
       chatScrollProbe.initialScrollMode === "anchor-latest" ||
       (chatScrollProbe.available === true && chatScrollProbe.atBottom === true);
 
-    markChatSidebarSelfTestProgress("testing-delete-chat");
+    markChatSidebarSelfTestProgress("testing-chat-management");
     const deleteTarget = conversations.find(
       (conversation) => !conversation.conversationId.startsWith("local-chatgpt:"),
     );
     const nativeDeleteActions = getNativeChatActions();
+    result.nativeChatManagementBridgeReady = isNativeChatManagementAvailable(nativeDeleteActions);
     result.nativeChatDeleteBridgeReady = isNativeChatDeleteAvailable(nativeDeleteActions);
     const deleteTargetRow = deleteTarget
       ? [...document.querySelectorAll(".gpt-codex-custom-chat-sidebar-item-row")].find(
@@ -2925,6 +3500,20 @@ async function runChatSidebarSelfTest() {
           )?.getClientRects().length > 0,
         2_000,
       );
+      const expectedConversationActions = ["share", "rename", "pin", "archive", "delete"];
+      const conversationActionButtons = [
+        ...document.querySelectorAll(
+          "#gpt-codex-custom-chat-conversation-menu [data-action]",
+        ),
+      ];
+      result.conversationMenuFullActionSetVisible =
+        conversationActionButtons.length === expectedConversationActions.length &&
+        conversationActionButtons.every(
+          (button, index) =>
+            button.dataset.action === expectedConversationActions[index] &&
+            !button.disabled &&
+            button.getClientRects().length > 0,
+        );
       document
         .querySelector('#gpt-codex-custom-chat-conversation-menu [data-action="delete"]')
         ?.click();
@@ -2944,6 +3533,69 @@ async function runChatSidebarSelfTest() {
             (row) => row.dataset.conversationId === deleteTarget.conversationId,
           ),
       );
+
+      Reflect.deleteProperty(globalThis, "GPT_CODEX_CUSTOM_CHAT_ACTION_DRY_RUN_RESULT");
+      Reflect.deleteProperty(globalThis, "GPT_CODEX_CUSTOM_CHAT_ACTION_UI_RESULT");
+      globalThis.GPT_CODEX_CUSTOM_CHAT_ACTION_DRY_RUN = true;
+      const runConversationActionDryRun = async (action) => {
+        Reflect.deleteProperty(globalThis, "GPT_CODEX_CUSTOM_CHAT_ACTION_DRY_RUN_RESULT");
+        Reflect.deleteProperty(globalThis, "GPT_CODEX_CUSTOM_CHAT_ACTION_UI_RESULT");
+        deleteMenuTrigger?.click();
+        const actionVisible = await waitForSelfTestCondition(
+          () =>
+            document.querySelector(
+              `#gpt-codex-custom-chat-conversation-menu [data-action="${action}"]`,
+            )?.getClientRects().length > 0,
+          2_000,
+        );
+        if (!actionVisible) return false;
+        document
+          .querySelector(`#gpt-codex-custom-chat-conversation-menu [data-action="${action}"]`)
+          ?.click();
+
+        if (action === "rename" || action === "share") {
+          const dialogVisible = await waitForSelfTestCondition(
+            () =>
+              document.querySelector(`.gpt-codex-custom-chat-action-dialog[data-action="${action}"]`)
+                ?.getClientRects().length > 0,
+            2_000,
+          );
+          if (!dialogVisible) return false;
+          if (action === "rename") {
+            const input = document.querySelector(
+              '.gpt-codex-custom-chat-action-dialog[data-action="rename"] input',
+            );
+            if (input instanceof HTMLInputElement) {
+              input.value = "Custom UI dry-run title";
+              input.dispatchEvent(new InputEvent("input", { bubbles: true }));
+            }
+          }
+          document
+            .querySelector(`[data-gpt-codex-custom-chat-action-confirm="${action}"]`)
+            ?.click();
+        }
+
+        const completed = await waitForSelfTestCondition(
+          () =>
+            globalThis.GPT_CODEX_CUSTOM_CHAT_ACTION_UI_RESULT?.action === action &&
+            globalThis.GPT_CODEX_CUSTOM_CHAT_ACTION_UI_RESULT?.conversationId ===
+              deleteTarget?.conversationId,
+          2_000,
+        );
+        const bridgeResult = globalThis.GPT_CODEX_CUSTOM_CHAT_ACTION_DRY_RUN_RESULT;
+        const uiResult = globalThis.GPT_CODEX_CUSTOM_CHAT_ACTION_UI_RESULT;
+        return Boolean(
+          completed &&
+            bridgeResult?.action === action &&
+            bridgeResult?.conversationId === deleteTarget?.conversationId &&
+            bridgeResult?.dryRun === true &&
+            uiResult?.dryRun === true,
+        );
+      };
+      result.chatRenameDryRunWorks = await runConversationActionDryRun("rename");
+      result.chatPinDryRunWorks = await runConversationActionDryRun("pin");
+      result.chatArchiveDryRunWorks = await runConversationActionDryRun("archive");
+      result.chatShareDryRunWorks = await runConversationActionDryRun("share");
 
       Reflect.deleteProperty(globalThis, "GPT_CODEX_CUSTOM_DELETE_DRY_RUN_RESULT");
       Reflect.deleteProperty(globalThis, "GPT_CODEX_CUSTOM_DELETE_DRY_RUN_UI_RESULT");
@@ -2994,12 +3646,35 @@ async function runChatSidebarSelfTest() {
       if (!Reflect.deleteProperty(globalThis, "GPT_CODEX_CUSTOM_DELETE_DRY_RUN_UI_RESULT")) {
         globalThis.GPT_CODEX_CUSTOM_DELETE_DRY_RUN_UI_RESULT = undefined;
       }
+      if (!Reflect.deleteProperty(globalThis, "GPT_CODEX_CUSTOM_CHAT_ACTION_DRY_RUN")) {
+        globalThis.GPT_CODEX_CUSTOM_CHAT_ACTION_DRY_RUN = undefined;
+      }
+      if (!Reflect.deleteProperty(globalThis, "GPT_CODEX_CUSTOM_CHAT_ACTION_DRY_RUN_RESULT")) {
+        globalThis.GPT_CODEX_CUSTOM_CHAT_ACTION_DRY_RUN_RESULT = undefined;
+      }
+      if (!Reflect.deleteProperty(globalThis, "GPT_CODEX_CUSTOM_CHAT_ACTION_UI_RESULT")) {
+        globalThis.GPT_CODEX_CUSTOM_CHAT_ACTION_UI_RESULT = undefined;
+      }
     }
     markChatSidebarSelfTestProgress("testing-message-edit");
 
+    const closeOpenMessageEditors = async () => {
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        const editor = document.querySelector(CHAT_MESSAGE_EDITOR_SELECTOR);
+        if (!editor) return true;
+        const cancel = [...(editor.closest("form")?.querySelectorAll("button") ?? [])].find(
+          (button) => button.textContent?.trim() === "Cancel" && !button.disabled,
+        );
+        if (!cancel) return false;
+        cancel.click();
+        await waitForSelfTestCondition(() => !editor.isConnected, 2_000);
+      }
+      return !document.querySelector(CHAT_MESSAGE_EDITOR_SELECTOR);
+    };
+    await closeOpenMessageEditors();
     await waitForSelfTestCondition(
       () => Boolean(document.querySelector('button[aria-label="Edit message"]')),
-      2_000,
+      6_000,
     );
     const editMessageButton = document.querySelector('button[aria-label="Edit message"]');
     result.messageEditControlVisible = Boolean(editMessageButton);
@@ -3008,13 +3683,16 @@ async function runChatSidebarSelfTest() {
       () => Boolean(document.querySelector(CHAT_MESSAGE_EDITOR_SELECTOR)),
       2_000,
     );
-    const cancelEditButton = [...document.querySelectorAll("button")].find(
-      (button) => button.textContent?.trim() === "Cancel" && button.closest("form"),
-    );
+    const openedMessageEditor = document.querySelector(CHAT_MESSAGE_EDITOR_SELECTOR);
+    const cancelEditButton = [
+      ...(openedMessageEditor?.closest("form")?.querySelectorAll("button") ?? []),
+    ].find((button) => button.textContent?.trim() === "Cancel");
     cancelEditButton?.click();
     result.messageEditCancelRestoresBubble = await waitForSelfTestCondition(
-      () => Boolean(document.querySelector('button[aria-label="Edit message"]')),
-      2_000,
+      () =>
+        !document.querySelector(CHAT_MESSAGE_EDITOR_SELECTOR) &&
+        Boolean(document.querySelector('button[aria-label="Edit message"]')),
+      6_000,
     );
 
     try {
@@ -3060,23 +3738,11 @@ async function runChatSidebarSelfTest() {
           dryRunResult.prompt === unchangedPrompt;
         result.messageEditSubmitClosesEditor = await waitForSelfTestCondition(
           () => !document.querySelector(CHAT_MESSAGE_EDITOR_SELECTOR),
-          2_000,
+          6_000,
         );
       }
     } finally {
-      const remainingEditor = document.querySelector(CHAT_MESSAGE_EDITOR_SELECTOR);
-      const remainingCancelButton = remainingEditor
-        ? [...(remainingEditor.closest("form")?.querySelectorAll("button") ?? [])].find(
-            (button) => button.textContent?.trim() === "Cancel",
-          )
-        : null;
-      remainingCancelButton?.click();
-      if (remainingCancelButton) {
-        await waitForSelfTestCondition(
-          () => !document.querySelector(CHAT_MESSAGE_EDITOR_SELECTOR),
-          500,
-        );
-      }
+      await closeOpenMessageEditors();
       if (!Reflect.deleteProperty(globalThis, "GPT_CODEX_CUSTOM_EDIT_DRY_RUN")) {
         globalThis.GPT_CODEX_CUSTOM_EDIT_DRY_RUN = undefined;
       }
@@ -3157,10 +3823,12 @@ async function runChatSidebarSelfTest() {
     try {
       imageFixture = document.createElement("div");
       imageFixture.id = "gpt-codex-custom-image-edit-self-test";
-      imageFixture.hidden = true;
+      imageFixture.style.cssText =
+        "position:fixed;left:-10000px;top:0;width:8px;height:8px;overflow:hidden;z-index:-1";
       const imagePreviewFixture = document.createElement("button");
       imagePreviewFixture.type = "button";
       imagePreviewFixture.dataset.testid = "generated-image-preview";
+      imagePreviewFixture.setAttribute("aria-label", "Generated image self-test");
       const imageFixtureContent = document.createElement("img");
       imageFixtureContent.alt = "Generated image self-test";
       const imageFixtureCanvas = document.createElement("canvas");
@@ -3193,6 +3861,49 @@ async function runChatSidebarSelfTest() {
         '[data-gpt-codex-custom-image-edit="gallery"]',
       );
       result.generatedImageEditControlVisible = Boolean(imageEditControl);
+      imagePreviewFixture.focus({ preventScroll: true });
+      imagePreviewFixture.click();
+      result.generatedImageFullViewOpens = await waitForSelfTestCondition(
+        () => {
+          const viewer = document.getElementById("gpt-codex-custom-image-viewer");
+          const viewerImage = viewer?.querySelector(".gpt-codex-custom-image-viewer-image");
+          return Boolean(
+            viewer?.getClientRects().length &&
+              viewerImage instanceof HTMLImageElement &&
+              viewerImage.src === imageFixtureContent.src &&
+              viewer.querySelector('[aria-label="Edit image"]') &&
+              viewer.querySelector('[aria-label="Close image preview"]'),
+          );
+        },
+        2_000,
+      );
+      document
+        .querySelector('#gpt-codex-custom-image-viewer [aria-label="Close image preview"]')
+        ?.click();
+      result.generatedImageFullViewCloses = await waitForSelfTestCondition(
+        () => !document.getElementById("gpt-codex-custom-image-viewer"),
+        2_000,
+      );
+      const firstCloseRestoredFocus = await waitForSelfTestCondition(
+        () => document.activeElement === imagePreviewFixture,
+        2_000,
+      );
+      imagePreviewFixture.click();
+      const viewerReopened = await waitForSelfTestCondition(
+        () => Boolean(document.getElementById("gpt-codex-custom-image-viewer")),
+        2_000,
+      );
+      document.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Escape" }));
+      const viewerClosedByKeyboard = await waitForSelfTestCondition(
+        () => !document.getElementById("gpt-codex-custom-image-viewer"),
+        2_000,
+      );
+      result.generatedImageFullViewRestoresInteraction = Boolean(
+        firstCloseRestoredFocus &&
+          viewerReopened &&
+          viewerClosedByKeyboard &&
+          !document.documentElement.hasAttribute("data-gpt-codex-custom-image-viewer-open"),
+      );
       let stagedFixtureFile = null;
       globalThis.GPT_CODEX_CUSTOM_IMAGE_COMPOSER = {
         probe: () => ({ conversationId: "self-test" }),
@@ -3217,9 +3928,13 @@ async function runChatSidebarSelfTest() {
       result.generatedImageEditPipelineWorks = convertedImagePipelineWorks;
     } catch {
       result.generatedImageEditControlVisible = false;
+      result.generatedImageFullViewOpens = false;
+      result.generatedImageFullViewCloses = false;
+      result.generatedImageFullViewRestoresInteraction = false;
       result.generatedImageEditPipelineWorks = false;
     } finally {
       globalThis.GPT_CODEX_CUSTOM_IMAGE_COMPOSER = imageComposer;
+      closeGeneratedImageViewer({ restoreFocus: false });
       imageFixture?.remove();
       if (imageFixtureUrl) URL.revokeObjectURL(imageFixtureUrl);
     }
@@ -3751,7 +4466,9 @@ function setChatMode(enabled, { launch = false, persist = true } = {}) {
   if (!enabled) {
     cancelChatThreadBottomSettlement("idle");
     closeChatConversationMenu();
+    closeChatActionDialog();
     closeChatDeleteDialog();
+    closeGeneratedImageViewer();
     cancelPendingNativeNavigation();
     chatSurfaceReturnOverride = false;
     clearChatSurfaceReturnTimer();
@@ -3910,6 +4627,10 @@ function scheduleDiagnostics() {
         generatedImageEditControlCount: document.querySelectorAll(
           "[data-gpt-codex-custom-image-edit]",
         ).length,
+        generatedImageViewerOpen: Boolean(generatedImageViewerElement?.isConnected),
+        generatedImageViewerReadyCount: document.querySelectorAll(
+          'button[data-testid="generated-image-preview"][data-gpt-codex-custom-image-edit-ready="true"]',
+        ).length,
         customSidebarSiteNavigationReady:
           document.querySelectorAll(".gpt-codex-custom-chat-nav-row").length >= 7,
         customSidebarNativeDestinationCount: ["library", "projects", "scheduled", "plugins"].filter(
@@ -3919,6 +4640,10 @@ function scheduleDiagnostics() {
         customSidebarSearchOpen: chatSearchOpen,
         customSidebarNativeSearchReady: isNativeChatSearchAvailable(),
         customSidebarNativeDeleteReady: isNativeChatDeleteAvailable(),
+        customSidebarNativeManagementReady: isNativeChatManagementAvailable(),
+        customSidebarNativeActionCount: CHAT_ACTION_BRIDGE_KEYS.filter((key) =>
+          isNativeChatActionAvailable(key),
+        ).length,
         customSidebarNativeSearchLoading: nativeChatSearchLoading,
         customSidebarNativeSearchHasError: Boolean(nativeChatSearchError),
         customSidebarNativeSearchResultCount: nativeChatSearchResults.length,
@@ -3975,6 +4700,46 @@ function handleNativeModeSelection(event) {
 
 function handleCustomUiKeydown(event) {
   if (!chatMode) return;
+  if (generatedImageViewerElement) {
+    if (event.key === "Tab") {
+      trapGeneratedImageViewerFocus(event);
+      return;
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      closeGeneratedImageViewer();
+      return;
+    }
+    if (!["+", "=", "-", "0"].includes(event.key)) return;
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.key === "-") updateGeneratedImageViewerScale(generatedImageViewerScale - 0.25);
+    else if (event.key === "0") updateGeneratedImageViewerScale(1);
+    else updateGeneratedImageViewerScale(generatedImageViewerScale + 0.25);
+    return;
+  }
+  if (chatActionDialogElement) {
+    if (event.key === "Tab") {
+      trapChatDialogFocus(
+        event,
+        chatActionDialogElement,
+        ".gpt-codex-custom-chat-action-dialog",
+      );
+      return;
+    }
+    if (event.key !== "Escape") return;
+    const pendingDialog = chatActionDialogElement.querySelector(
+      ".gpt-codex-custom-chat-action-dialog",
+    );
+    if (pendingDialog?.dataset.pending !== "true") {
+      event.preventDefault();
+      event.stopPropagation();
+      closeChatActionDialog();
+    }
+    return;
+  }
   if (chatDeleteDialogElement) {
     if (event.key === "Tab") {
       trapChatDeleteDialogFocus(event);
@@ -4046,6 +4811,7 @@ function initializeCustomUi() {
   markCustomBuild();
   markWindowTitle();
   installHistoryObserver();
+  document.addEventListener("click", handleGeneratedImagePreviewClick, true);
   document.addEventListener("click", handleNativeModeSelection, true);
   document.addEventListener("keydown", handleCustomUiKeydown, true);
   window.addEventListener("resize", updateSidebarBoundary);

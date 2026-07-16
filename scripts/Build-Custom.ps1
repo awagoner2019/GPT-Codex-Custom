@@ -331,12 +331,13 @@ if ($appMainText.IndexOf($profileIdentityNeedle, $profileIdentityMatch + $profil
 }
 $appMainText = $appMainText.Replace($profileIdentityNeedle, $profileIdentityReplacement)
 
+$chatActionBridge = 'let GPTCodexChatActionId=e=>{let t=String(e??``).trim();if(t.length===0||t.startsWith(`local-chatgpt:`))throw Error(`Only saved chats support this action`);return t},GPTCodexChatActionDryRun=(e,t)=>{if(globalThis.GPT_CODEX_CUSTOM_CHAT_ACTION_DRY_RUN!==!0)return null;let n={action:e,...t,dryRun:!0};globalThis.GPT_CODEX_CUSTOM_CHAT_ACTION_DRY_RUN_RESULT=n;return n};globalThis.GPT_CODEX_CUSTOM_CHAT_ACTIONS={available:!0,archiveConversation:async e=>{let t=GPTCodexChatActionId(e),n=GPTCodexChatActionDryRun(`archive`,{archived:!0,conversationId:t});if(n)return n;await a.get(WS).setArchived(t,!0);return{archived:!0,conversationId:t,dryRun:!1}},deleteConversation:async e=>{let t=GPTCodexChatActionId(e);if(globalThis.GPT_CODEX_CUSTOM_DELETE_DRY_RUN===!0){globalThis.GPT_CODEX_CUSTOM_DELETE_DRY_RUN_RESULT={conversationId:t};return{conversationId:t,deleted:!0,dryRun:!0}}let n=GPTCodexChatActionDryRun(`delete`,{conversationId:t,deleted:!0});if(n)return n;await a.get(WS).delete(t);return{conversationId:t,deleted:!0,dryRun:!1}},pinConversation:async(e,t)=>{let n=GPTCodexChatActionId(e),r=t===!0,i=GPTCodexChatActionDryRun(`pin`,{conversationId:n,pinned:r});if(i)return i;await a.get(WS).setPinned(n,r);return{conversationId:n,dryRun:!1,pinned:r}},renameConversation:async(e,t)=>{let n=GPTCodexChatActionId(e),r=String(t??``).trim().slice(0,160);if(r.length===0)throw Error(`Chat title cannot be empty`);let i=GPTCodexChatActionDryRun(`rename`,{conversationId:n,renamed:!0,title:r});if(i)return i;await a.get(WS).rename(n,r);return{conversationId:n,dryRun:!1,renamed:!0,title:r}},shareConversation:async(e,t)=>{let n=GPTCodexChatActionId(e),r=GPTCodexChatActionDryRun(`share`,{conversationId:n,shared:!0,shareUrl:`https://chatgpt.com/share/gpt-codex-custom-dry-run`});if(r)return r;let i=a.get(WS),o=await i.get(n),s=o?.current_node??o?.currentNodeId;if(typeof s!==`string`||s.length===0)throw Error(`The conversation has no shareable current message`);let c=await i.createShareLink({conversation_id:n,current_node_id:s,is_anonymous:!0}),l=c.current_node_id??s,u=c.share_url,d=e=>e?.has_been_auto_blocked===!0||e?.has_been_auto_moderated===!0||e?.has_been_blocked===!0;if(d(c.moderation_state))throw Error(`ChatGPT blocked this conversation from sharing`);if(!(c.is_public&&c.is_visible&&c.is_anonymous)){let e=await i.updateShareLink(c.share_id,{current_node_id:l,highlighted_message_id:c.highlighted_message_id,is_anonymous:!0,is_public:!0,is_visible:!0,title:String(t??c.title??``)});if(d(e.moderation_state))throw Error(`ChatGPT blocked this conversation from sharing`)}if(typeof u!==`string`||u.length===0)throw Error(`ChatGPT did not return a share link`);return{conversationId:n,currentNodeId:l,dryRun:!1,shared:!0,shareUrl:u}}};globalThis.GPT_CODEX_CUSTOM_SYNC_CHAT_ACTIONS?.(globalThis.GPT_CODEX_CUSTOM_CHAT_ACTIONS);'
 $chatSearchBridgeNeedle = 'function F0(e){let t=(0,L0.c)(20),{enabled:n,limit:r,search:i}=e,a=f(b),o=g(db),s;'
-$chatSearchBridgeReplacement = 'function F0(e){let t=(0,L0.c)(20),{enabled:n,limit:r,search:i}=e,a=f(b),o=g(db);globalThis.GPT_CODEX_CUSTOM_CHAT_ACTIONS={available:!0,deleteConversation:async e=>{let t=String(e??``).trim();if(t.length===0||t.startsWith(`local-chatgpt:`))throw Error(`Only saved chats can be deleted`);if(globalThis.GPT_CODEX_CUSTOM_DELETE_DRY_RUN===!0){globalThis.GPT_CODEX_CUSTOM_DELETE_DRY_RUN_RESULT={conversationId:t};return{conversationId:t,deleted:!0,dryRun:!0}}await a.get(WS).delete(t);return{conversationId:t,deleted:!0,dryRun:!1}}};globalThis.GPT_CODEX_CUSTOM_SYNC_CHAT_ACTIONS?.(globalThis.GPT_CODEX_CUSTOM_CHAT_ACTIONS);globalThis.GPT_CODEX_CUSTOM_CHAT_SEARCH={available:!0,search:async e=>{let t=String(e?.query??``).trim();if(t.length===0)return{available:!0,cursor:null,items:[]};let n=await a.get(WS).globalSearch({limit:Math.min(Math.max(Number(e?.limit)||20,1),50),query:t});return{available:!0,cursor:n.cursor??n.next_cursor??null,items:N0({searchItems:n.items??[]})}}};globalThis.GPT_CODEX_CUSTOM_SYNC_CHAT_SEARCH?.(globalThis.GPT_CODEX_CUSTOM_CHAT_SEARCH);let s;'
+$chatSearchBridgeReplacement = 'function F0(e){let t=(0,L0.c)(20),{enabled:n,limit:r,search:i}=e,a=f(b),o=g(db);' + $chatActionBridge + 'globalThis.GPT_CODEX_CUSTOM_CHAT_SEARCH={available:!0,search:async e=>{let t=String(e?.query??``).trim();if(t.length===0)return{available:!0,cursor:null,items:[]};let n=await a.get(WS).globalSearch({limit:Math.min(Math.max(Number(e?.limit)||20,1),50),query:t});return{available:!0,cursor:n.cursor??n.next_cursor??null,items:N0({searchItems:n.items??[]})}}};globalThis.GPT_CODEX_CUSTOM_SYNC_CHAT_SEARCH?.(globalThis.GPT_CODEX_CUSTOM_CHAT_SEARCH);let s;'
 $chatSearchBridgeNeedleNew = 'function L0(e){let t=(0,z0.c)(20),{enabled:n,limit:r,search:i}=e,a=f(b),o=g(db),s;'
-$chatSearchBridgeReplacementNew = 'function L0(e){let t=(0,z0.c)(20),{enabled:n,limit:r,search:i}=e,a=f(b),o=g(db);globalThis.GPT_CODEX_CUSTOM_CHAT_ACTIONS={available:!0,deleteConversation:async e=>{let t=String(e??``).trim();if(t.length===0||t.startsWith(`local-chatgpt:`))throw Error(`Only saved chats can be deleted`);if(globalThis.GPT_CODEX_CUSTOM_DELETE_DRY_RUN===!0){globalThis.GPT_CODEX_CUSTOM_DELETE_DRY_RUN_RESULT={conversationId:t};return{conversationId:t,deleted:!0,dryRun:!0}}await a.get(WS).delete(t);return{conversationId:t,deleted:!0,dryRun:!1}}};globalThis.GPT_CODEX_CUSTOM_SYNC_CHAT_ACTIONS?.(globalThis.GPT_CODEX_CUSTOM_CHAT_ACTIONS);globalThis.GPT_CODEX_CUSTOM_CHAT_SEARCH={available:!0,search:async e=>{let t=String(e?.query??``).trim();if(t.length===0)return{available:!0,cursor:null,items:[]};let n=await a.get(WS).globalSearch({limit:Math.min(Math.max(Number(e?.limit)||20,1),50),query:t});return{available:!0,cursor:n.cursor??n.next_cursor??null,items:F0({searchItems:n.items??[]})}}};globalThis.GPT_CODEX_CUSTOM_SYNC_CHAT_SEARCH?.(globalThis.GPT_CODEX_CUSTOM_CHAT_SEARCH);let s;'
+$chatSearchBridgeReplacementNew = 'function L0(e){let t=(0,z0.c)(20),{enabled:n,limit:r,search:i}=e,a=f(b),o=g(db);' + $chatActionBridge + 'globalThis.GPT_CODEX_CUSTOM_CHAT_SEARCH={available:!0,search:async e=>{let t=String(e?.query??``).trim();if(t.length===0)return{available:!0,cursor:null,items:[]};let n=await a.get(WS).globalSearch({limit:Math.min(Math.max(Number(e?.limit)||20,1),50),query:t});return{available:!0,cursor:n.cursor??n.next_cursor??null,items:F0({searchItems:n.items??[]})}}};globalThis.GPT_CODEX_CUSTOM_SYNC_CHAT_SEARCH?.(globalThis.GPT_CODEX_CUSTOM_CHAT_SEARCH);let s;'
 $chatSearchBridgeNeedleLatest = 'function z0(e){let t=(0,V0.c)(20),{enabled:n,limit:r,search:i}=e,a=f(b),o=g(db),s;'
-$chatSearchBridgeReplacementLatest = 'function z0(e){let t=(0,V0.c)(20),{enabled:n,limit:r,search:i}=e,a=f(b),o=g(db);globalThis.GPT_CODEX_CUSTOM_CHAT_ACTIONS={available:!0,deleteConversation:async e=>{let t=String(e??``).trim();if(t.length===0||t.startsWith(`local-chatgpt:`))throw Error(`Only saved chats can be deleted`);if(globalThis.GPT_CODEX_CUSTOM_DELETE_DRY_RUN===!0){globalThis.GPT_CODEX_CUSTOM_DELETE_DRY_RUN_RESULT={conversationId:t};return{conversationId:t,deleted:!0,dryRun:!0}}await a.get(WS).delete(t);return{conversationId:t,deleted:!0,dryRun:!1}}};globalThis.GPT_CODEX_CUSTOM_SYNC_CHAT_ACTIONS?.(globalThis.GPT_CODEX_CUSTOM_CHAT_ACTIONS);globalThis.GPT_CODEX_CUSTOM_CHAT_SEARCH={available:!0,search:async e=>{let t=String(e?.query??``).trim();if(t.length===0)return{available:!0,cursor:null,items:[]};let n=await a.get(WS).globalSearch({limit:Math.min(Math.max(Number(e?.limit)||20,1),50),query:t});return{available:!0,cursor:n.cursor??n.next_cursor??null,items:L0({searchItems:n.items??[]})}}};globalThis.GPT_CODEX_CUSTOM_SYNC_CHAT_SEARCH?.(globalThis.GPT_CODEX_CUSTOM_CHAT_SEARCH);let s;'
+$chatSearchBridgeReplacementLatest = 'function z0(e){let t=(0,V0.c)(20),{enabled:n,limit:r,search:i}=e,a=f(b),o=g(db);' + $chatActionBridge + 'globalThis.GPT_CODEX_CUSTOM_CHAT_SEARCH={available:!0,search:async e=>{let t=String(e?.query??``).trim();if(t.length===0)return{available:!0,cursor:null,items:[]};let n=await a.get(WS).globalSearch({limit:Math.min(Math.max(Number(e?.limit)||20,1),50),query:t});return{available:!0,cursor:n.cursor??n.next_cursor??null,items:L0({searchItems:n.items??[]})}}};globalThis.GPT_CODEX_CUSTOM_SYNC_CHAT_SEARCH?.(globalThis.GPT_CODEX_CUSTOM_CHAT_SEARCH);let s;'
 $chatSearchBridgeSequences = @(
     [pscustomobject]@{ Name = "26.707.31428"; Needle = $chatSearchBridgeNeedle; Replacement = $chatSearchBridgeReplacement }
     [pscustomobject]@{ Name = "26.707.51957"; Needle = $chatSearchBridgeNeedleNew; Replacement = $chatSearchBridgeReplacementNew }
@@ -443,6 +444,61 @@ if ($quickChatText.IndexOf($sessionBridgeNeedle, $sessionBridgeMatch + $sessionB
 }
 $quickChatText = $quickChatText.Replace($sessionBridgeNeedle, $sessionBridgeReplacement)
 [System.IO.File]::WriteAllText($QuickChatFile[0].FullName, $quickChatText, $utf8NoBom)
+
+$GeneratedImagePreviewFile = @(
+    Get-ChildItem -LiteralPath (Join-Path $PatchedSource "webview\assets") -Filter "generated-image-preview-*.js"
+)
+if ($GeneratedImagePreviewFile.Count -ne 1) {
+    throw "Expected exactly one generated-image/message renderer, found $($GeneratedImagePreviewFile.Count)."
+}
+$generatedImagePreviewText = [System.IO.File]::ReadAllText($GeneratedImagePreviewFile[0].FullName)
+$messageCancelGuardPatches = @(
+    [pscustomobject]@{
+        Name = "cancel guard state"
+        Needle = 'c=(0,fd.useRef)(null),[l]=(0,fd.useState)(()=>{'
+        Replacement = 'c=(0,fd.useRef)(null),GPTCodexCancelGuard=(0,fd.useRef)(!1),[l]=(0,fd.useState)(()=>{'
+    },
+    [pscustomobject]@{
+        Name = "cancel guard draft callback"
+        Needle = '_=(0,fd.useEffectEvent)(()=>{i(l.getText())});'
+        Replacement = '_=(0,fd.useEffectEvent)(()=>{GPTCodexCancelGuard.current||i(l.getText())});'
+    },
+    [pscustomobject]@{
+        Name = "submit guard"
+        Needle = 'let v=async()=>{if(!h){g(!0);try{await a(l.getText().trim())}finally{g(!1)}}};'
+        Replacement = 'let v=async()=>{if(!h){g(!0);let e=l.getText().trim();GPTCodexCancelGuard.current=!0;try{await a(e)}catch(e){throw GPTCodexCancelGuard.current=!1,e}finally{g(!1)}}};'
+    },
+    [pscustomobject]@{
+        Name = "cancel guard button"
+        Needle = '(0,pd.jsx)(ge,{color:`outline`,size:`toolbar`,disabled:h,onClick:r,children:(0,pd.jsx)(q,{id:`codex.userMessage.cancelEditMessage`,defaultMessage:`Cancel`,description:`Button label for canceling an edited user message`})})'
+        Replacement = '(0,pd.jsx)(ge,{color:`outline`,size:`toolbar`,disabled:h,onClick:()=>{GPTCodexCancelGuard.current=!0,r()},children:(0,pd.jsx)(q,{id:`codex.userMessage.cancelEditMessage`,defaultMessage:`Cancel`,description:`Button label for canceling an edited user message`})})'
+    }
+)
+foreach ($messageCancelGuardPatch in $messageCancelGuardPatches) {
+    $messageCancelGuardMatch = $generatedImagePreviewText.IndexOf(
+        $messageCancelGuardPatch.Needle,
+        [System.StringComparison]::Ordinal
+    )
+    if ($messageCancelGuardMatch -lt 0) {
+        throw "Could not find the pinned message-edit $($messageCancelGuardPatch.Name) sequence."
+    }
+    if ($generatedImagePreviewText.IndexOf(
+        $messageCancelGuardPatch.Needle,
+        $messageCancelGuardMatch + $messageCancelGuardPatch.Needle.Length,
+        [System.StringComparison]::Ordinal
+    ) -ge 0) {
+        throw "Found more than one message-edit $($messageCancelGuardPatch.Name) sequence."
+    }
+    $generatedImagePreviewText = $generatedImagePreviewText.Replace(
+        $messageCancelGuardPatch.Needle,
+        $messageCancelGuardPatch.Replacement
+    )
+}
+[System.IO.File]::WriteAllText(
+    $GeneratedImagePreviewFile[0].FullName,
+    $generatedImagePreviewText,
+    $utf8NoBom
+)
 
 $ChatGptThreadFile = @(Get-ChildItem -LiteralPath (Join-Path $PatchedSource "webview\assets") -Filter "chatgpt-thread-visibility-*.js")
 if ($ChatGptThreadFile.Count -ne 1) {

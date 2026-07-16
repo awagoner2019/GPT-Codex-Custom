@@ -679,11 +679,11 @@ async function switchProductMode(mode, timeout = 12_000) {
         current.customTriggerVisibleCount === 1
       );
     };
-    if (ready()) return { mode: targetMode, ready: true, switched: false };
+    if (ready()) return { mode: targetMode, probe: probe(), ready: true, switched: false };
     if (targetMode === 'chat') {
       globalThis.GPT_CODEX_CUSTOM_OPEN_CHAT?.();
       while (performance.now() < deadline && !ready()) await delay(25);
-      return { mode: probe()?.activeMode ?? null, ready: ready(), switched: true };
+      return { mode: probe()?.activeMode ?? null, probe: probe(), ready: ready(), switched: true };
     }
     document.querySelector('[data-gpt-codex-custom-product-selector="true"]')?.click();
     let option = null;
@@ -695,10 +695,12 @@ async function switchProductMode(mode, timeout = 12_000) {
     }
     option?.click();
     while (performance.now() < deadline && !ready()) await delay(25);
-    return { mode: probe()?.activeMode ?? null, ready: ready(), switched: true };
+    return { mode: probe()?.activeMode ?? null, probe: probe(), ready: ready(), switched: true };
   })()`);
   if (!outcome?.ready) {
-    throw new Error(`Could not switch the custom app to ${mode} mode for motion verification.`);
+    throw new Error(
+      `Could not switch the custom app to ${mode} mode for motion verification: ${JSON.stringify(outcome)}`,
+    );
   }
   return outcome;
 }

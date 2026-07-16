@@ -44,6 +44,18 @@ that a feature works. For each action, verify:
 - No message, upload, delete, or account mutation occurs in diagnostics unless
   the test explicitly uses a non-destructive dry-run bridge.
 
+The saved-conversation menu uses the single
+`GPT_CODEX_CUSTOM_CHAT_ACTIONS` bridge injected by `scripts/Build-Custom.ps1`.
+When adding or changing an action, keep its capability check independent so an
+unsupported upstream method disables only that menu item. Extend the shared
+dry-run branch and strict runtime outcomes before exercising any account-backed
+mutation.
+
+Generated-image thumbnails are intercepted only in Chat mode. Viewer changes
+must preserve Escape/backdrop dismissal, keyboard focus trapping and restoration,
+zoom reset, and the native attachment handoff used by Edit image. Work and Codex
+must retain their upstream image-click behavior.
+
 ## Adding a maintained module
 
 Adding a CSS or JavaScript file to `custom/` is not enough. Update all of these:

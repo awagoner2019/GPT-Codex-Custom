@@ -2,8 +2,8 @@
     "schemaVersion":  1,
     "project":  "GPTCodexCustom",
     "repository":  "awagoner2019/GPT-Codex-Custom",
-    "version":  "0.1.2",
-    "generatedAtUtc":  "2026-07-16T02:57:18.6892963Z",
+    "version":  "0.1.3",
+    "generatedAtUtc":  "2026-07-16T04:14:10.2203679Z",
     "files":  [
                   {
                       "path":  ".gitattributes",
@@ -17,7 +17,7 @@
                   },
                   {
                       "path":  ".github/ISSUE_TEMPLATE/bug_report.yml",
-                      "sha256":  "D232E6D34A22E0D84F19B072B040011216E17597F539BFF139DC89DBA06B4718",
+                      "sha256":  "94BA7DE796C26B37FF099D4F840ED30BF8EA21F827B41F9D0D415131B34C2017",
                       "length":  1792
                   },
                   {
@@ -62,13 +62,13 @@
                   },
                   {
                       "path":  "custom/gpt-codex-custom.css",
-                      "sha256":  "B0E032F24F63D2AEC656711CA5C03294EE01663633ED75C067BA145605DB9D6D",
-                      "length":  24323
+                      "sha256":  "D52B0F05A7115FFC5D67D791D94B16C4974DC0B5C081FA92AF5C8AD5161D7EE8",
+                      "length":  29964
                   },
                   {
                       "path":  "custom/gpt-codex-custom.js",
-                      "sha256":  "A5EC6044C96BAFC0137DCBC420CB130F1197A0F0E7B72ED23DF0AAED8F6AB65C",
-                      "length":  161590
+                      "sha256":  "17E19359D4211BA337E32922F23C38D33499F0B605B3BFD4D2410D75B439CF39",
+                      "length":  192962
                   },
                   {
                       "path":  "custom/gpt-codex-model-picker.css",
@@ -102,8 +102,8 @@
                   },
                   {
                       "path":  "docs/ARCHITECTURE.md",
-                      "sha256":  "DE16D9F3C864187D474E84B7FFDFC01A03D432381915028CD2B19BB05552962F",
-                      "length":  11159
+                      "sha256":  "F8D0FAC1F3A9E5A3074CF1DF70C2C50166CE7833442BE3AC6B26571CCB1DEC3A",
+                      "length":  11931
                   },
                   {
                       "path":  "docs/images/01-model-matrix-ultra-fast.png",
@@ -127,13 +127,18 @@
                   },
                   {
                       "path":  "docs/MODIFYING.md",
-                      "sha256":  "40A30DAC205768A38230413B9269CDED232C3614D5A2FBBB621529229C09E3F2",
-                      "length":  3375
+                      "sha256":  "C10ED709D166A4F41A639691906E70866C35A87312D9A3516E89A3508B022AB5",
+                      "length":  4034
                   },
                   {
                       "path":  "docs/RELEASE_0.1.2.md",
                       "sha256":  "574FD90E0CE38D181756F7B99C6FF3051279F74B03992E918C922AECAFB8AAA8",
                       "length":  1441
+                  },
+                  {
+                      "path":  "docs/RELEASE_0.1.3.md",
+                      "sha256":  "B35356A3BCF11A9175A1F5968B23CA82E0C4887005CF14A56AADAD46F3B0ACCA",
+                      "length":  1819
                   },
                   {
                       "path":  "docs/SHOWCASE.md",
@@ -157,23 +162,23 @@
                   },
                   {
                       "path":  "package.json",
-                      "sha256":  "91F6748A7B86E50D4759AF9251ACDCC1D54FDE88FA41AABAC29DE43555B85966",
+                      "sha256":  "C2262B1FA89B14C520DF49368953697CF189948CFBF71FF92A48BE97716D584D",
                       "length":  3695
                   },
                   {
                       "path":  "package-lock.json",
-                      "sha256":  "12A58E8CE7F41C5EC76E9F52B13F9870E9E9111E92D7635C1BF16ABF8DE7BE28",
+                      "sha256":  "AFBF21CBA6112FBE5D0384CA23F3BBC40787B73CD7444F15A5A1605E3589158C",
                       "length":  5834
                   },
                   {
                       "path":  "README.md",
-                      "sha256":  "0B8DB771F0390386DD6CB903024ABBFBAE2C17C99F5F668C525FFFA23EFA16AD",
-                      "length":  9408
+                      "sha256":  "8DA466295F0D25227A480F330214A28C5034A3BC4AAF220211B242DA820F8835",
+                      "length":  9596
                   },
                   {
                       "path":  "scripts/Build-Custom.ps1",
-                      "sha256":  "0B8432B70D9D210D616120CA45926D01A096B67A455FA42BBB30FDF2ABA7D675",
-                      "length":  67975
+                      "sha256":  "39A7BF9294DE89B2194C235A690F663A3E74ADAA98E5BB9B9A5CE40EEC621BF1",
+                      "length":  72120
                   },
                   {
                       "path":  "scripts/Capture-Custom-Screenshot.mjs",
@@ -197,8 +202,8 @@
                   },
                   {
                       "path":  "scripts/Launch-Custom.ps1",
-                      "sha256":  "519BAC462347A9E83923012EA47577BAD962C21B4AFB92083FF790F61F50EB12",
-                      "length":  15314
+                      "sha256":  "AC2D087381A54F90E82ABEF8E26035AF2C55EFC99F1BEBEFB6AE5FED54F5EB58",
+                      "length":  15621
                   },
                   {
                       "path":  "scripts/New-UpdatePackage.ps1",
@@ -232,18 +237,18 @@
                   },
                   {
                       "path":  "scripts/Verify-Custom.ps1",
-                      "sha256":  "462F29301DB5A573E59882B50AB37DDEF352C7002A33949C70635DCAC0BEF881",
-                      "length":  59558
+                      "sha256":  "69684C21C30D2999BDCB27CD7B5FED300B5F9BE55E859390EEE138F52D339A4F",
+                      "length":  61876
                   },
                   {
                       "path":  "scripts/Verify-Custom-Interactive.ps1",
-                      "sha256":  "20DF9736D5F99B7DE8BFC5B19DC1A6973DEED0395E01428BFF8DE0AE93A5C13C",
-                      "length":  97786
+                      "sha256":  "F47D4FCD124A8F4FC355AEB8D7B67687DDD39155CAA5D197488542ED4CB5EEE9",
+                      "length":  98487
                   },
                   {
                       "path":  "scripts/Verify-Model-Picker-Motion.mjs",
-                      "sha256":  "19874BC8BFABF664837AA8554C0D861F4B7EBD4641D7A72D8741CC98EB9D238B",
-                      "length":  96917
+                      "sha256":  "DDF582A9F70184DF3C879EA06895C63D1356CE6628C7BE0D5555CF6DA83B3BEE",
+                      "length":  97005
                   },
                   {
                       "path":  "scripts/Verify-Token-Hud-Dock.mjs",

@@ -395,7 +395,14 @@ $InspectionExpression = @'
     const sidebar = document.getElementById("gpt-codex-custom-chat-sidebar");
     const newChat = sidebar?.querySelector('[data-gpt-codex-custom-new-chat="true"]');
     const searchBridge = globalThis.GPT_CODEX_CUSTOM_CHAT_SEARCH;
-    const deleteBridge = globalThis.GPT_CODEX_CUSTOM_CHAT_ACTIONS;
+    const chatActionBridge = globalThis.GPT_CODEX_CUSTOM_CHAT_ACTIONS;
+    const requiredChatActionMethods = [
+      "archiveConversation",
+      "deleteConversation",
+      "pinConversation",
+      "renameConversation",
+      "shareConversation",
+    ];
     const conversationMenuTrigger = sidebar?.querySelector(
       '[data-gpt-codex-custom-conversation-menu-trigger="true"]:not(:disabled)',
     );
@@ -407,8 +414,8 @@ $InspectionExpression = @'
       sidebar.querySelectorAll(".gpt-codex-custom-chat-sidebar-item").length > 0 &&
       searchBridge?.available === true &&
       typeof searchBridge.search === "function" &&
-      deleteBridge?.available === true &&
-      typeof deleteBridge.deleteConversation === "function" &&
+      chatActionBridge?.available === true &&
+      requiredChatActionMethods.every((method) => typeof chatActionBridge[method] === "function") &&
       conversationMenuTrigger
     ) {
       break;
@@ -579,10 +586,20 @@ $InspectionExpression = @'
     nativeSearchBridge?.available === true &&
       typeof nativeSearchBridge?.search === "function",
   );
-  const nativeDeleteBridge = globalThis.GPT_CODEX_CUSTOM_CHAT_ACTIONS;
-  const nativeDeleteReady = Boolean(
-    nativeDeleteBridge?.available === true &&
-      typeof nativeDeleteBridge?.deleteConversation === "function",
+  const nativeChatActionBridge = globalThis.GPT_CODEX_CUSTOM_CHAT_ACTIONS;
+  const requiredChatActionMethods = [
+    "archiveConversation",
+    "deleteConversation",
+    "pinConversation",
+    "renameConversation",
+    "shareConversation",
+  ];
+  const availableChatActionMethods = requiredChatActionMethods.filter(
+    (method) => typeof nativeChatActionBridge?.[method] === "function",
+  );
+  const nativeChatManagementReady = Boolean(
+    nativeChatActionBridge?.available === true &&
+      availableChatActionMethods.length === requiredChatActionMethods.length,
   );
   const conversationMenuControls = sidebar
     ? [...sidebar.querySelectorAll(
@@ -1677,9 +1694,11 @@ $InspectionExpression = @'
         triggerCount: conversationMenuControls.length,
         enabledCount: enabledConversationMenuControls.length,
         visibleCount: visibleConversationMenuControls.length,
-        nativeBridgeReady: nativeDeleteReady,
+        requiredMethods: requiredChatActionMethods,
+        availableMethods: availableChatActionMethods,
+        nativeBridgeReady: nativeChatManagementReady,
         pass: Boolean(
-          nativeDeleteReady &&
+          nativeChatManagementReady &&
             conversationMenuControls.length > 0 &&
             enabledConversationMenuControls.length > 0 &&
             visibleConversationMenuControls.length > 0,
@@ -1878,8 +1897,8 @@ function New-VerificationReport {
 
     Add-RequiredVerificationCheck -List $checks -Name "chat.conversationActions" -Category "Custom contract" `
         -Passed ([bool](Get-ObjectPropertyValue -InputObject $conversationActions -Name "pass" -Default $false)) `
-        -PassedDetail "Saved chats expose a visible, enabled actions menu backed by the native delete bridge." `
-        -FailedDetail "The saved-chat actions control is hidden, disabled, or missing its native delete bridge." `
+        -PassedDetail "Saved chats expose a visible, enabled actions menu backed by all five native management methods." `
+        -FailedDetail "The saved-chat actions control is hidden, disabled, or missing one of its native management methods." `
         -Evidence $conversationActions
 
     Add-RequiredVerificationCheck -List $checks -Name "chat.searchControl" -Category "Custom contract" `

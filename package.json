@@ -1,6 +1,6 @@
 {
   "name": "gpt-codex-custom",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "description": "Isolated UI customization layer for a copied GPT/Codex desktop build.",
   "repository": {

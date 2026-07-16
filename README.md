@@ -21,11 +21,12 @@ after the package is ready. The official package remains read-only.
 - A first-class **Chat** product beside the app's existing Work and Codex modes.
 - A ChatGPT-style left rail with New chat, account-backed history, search,
   Library, Projects, Scheduled, Plugins, pinned/recent chats, profile controls,
-  and per-chat delete confirmation.
+  and per-chat Share, Rename, Pin/Unpin, Archive, and confirmed Delete actions.
 - Persistent Chat/Work/Codex switching after a conversation is open.
 - Sent-message editing through the app's native branch/regenerate path.
-- Generated-image edit handoff through the native attachment and `picture_v2`
-  workflow, while preserving the app's full-screen image viewer.
+- A reliable full-screen generated-image viewer with zoom, keyboard/backdrop
+  close, focus restoration, and edit handoff through the native attachment and
+  `picture_v2` workflow.
 - A fluid account-backed model/effort matrix, a separate Ultra lever with moving
   particles, and the native Fast tier with a lightning activation effect.
 - A right-edge token dock for input, output, thinking, total, source precision,
@@ -171,11 +172,13 @@ npm run launch:diagnostics
 npm run verify:interactive
 ```
 
-The self-test exercises the real custom renderer without sending a message or
-deleting a chat. It covers product switching, history/search, New chat, edit and
-delete dry-runs, image attachment staging, Library routing, model picker state,
-token HUD state, and pinboard storage. Diagnostic endpoints bind only to
-loopback and exist only for the isolated custom profile.
+The self-test exercises the real custom renderer without sending a message,
+publishing a share link, or changing/deleting a chat. It covers product
+switching, history/search, New chat, Share/Rename/Pin/Archive/Delete dry-runs,
+full-screen image open/close/focus restoration, native image attachment staging,
+Library routing, model picker state, token HUD state, and pinboard storage.
+Diagnostic endpoints bind only to loopback and exist only for the isolated
+custom profile.
 
 See the sanitized [Feature showcase](docs/SHOWCASE.md) for the current model
 matrix, token dock, and persistent Chat/Work/Codex selector.
