@@ -52,7 +52,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $version = $env:GITHUB_REF_NAME.TrimStart("v")
-          $notesFile = "docs/RELEASE_$($version.Replace('.', '_')).md"
+          $notesFile = "docs/RELEASE_$version.md"
           if (Test-Path -LiteralPath $notesFile) {
             gh release create $env:GITHUB_REF_NAME `
               dist/gpt-codex-custom-update.zip `
