@@ -3,7 +3,7 @@
     "project":  "GPTCodexCustom",
     "repository":  "awagoner2019/GPT-Codex-Custom",
     "version":  "0.1.2",
-    "generatedAtUtc":  "2026-07-16T02:50:22.4427900Z",
+    "generatedAtUtc":  "2026-07-16T02:54:04.0235611Z",
     "files":  [
                   {
                       "path":  ".gitattributes",
@@ -32,8 +32,8 @@
                   },
                   {
                       "path":  ".github/workflows/publish-release.yml",
-                      "sha256":  "E77777445BABF4BA7E57692B050C0CD8816CA8B73CA19AFB48CA312B9CE7004B",
-                      "length":  2016
+                      "sha256":  "12DEE6F2785956E57AA361408B1E1292C0E009444A6A7748AAADC1B51E0053B5",
+                      "length":  2284
                   },
                   {
                       "path":  ".github/workflows/source-check.yml",

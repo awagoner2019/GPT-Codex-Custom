@@ -53,15 +53,20 @@ jobs:
         run: |
           $version = $env:GITHUB_REF_NAME.TrimStart("v")
           $notesFile = "docs/RELEASE_$($version.Replace('.', '_')).md"
-          $notesArgs = if (Test-Path -LiteralPath $notesFile) {
-            @("--notes-file", $notesFile)
+          if (Test-Path -LiteralPath $notesFile) {
+            gh release create $env:GITHUB_REF_NAME `
+              dist/gpt-codex-custom-update.zip `
+              dist/gpt-codex-custom-update.zip.sha256 `
+              --repo $env:GITHUB_REPOSITORY `
+              --verify-tag `
+              --title "GPT + Codex Custom $env:GITHUB_REF_NAME" `
+              --notes-file $notesFile
           } else {
-            @("--generate-notes")
+            gh release create $env:GITHUB_REF_NAME `
+              dist/gpt-codex-custom-update.zip `
+              dist/gpt-codex-custom-update.zip.sha256 `
+              --repo $env:GITHUB_REPOSITORY `
+              --verify-tag `
+              --title "GPT + Codex Custom $env:GITHUB_REF_NAME" `
+              --generate-notes
           }
-          gh release create $env:GITHUB_REF_NAME `
-            dist/gpt-codex-custom-update.zip `
-            dist/gpt-codex-custom-update.zip.sha256 `
-            --repo $env:GITHUB_REPOSITORY `
-            --verify-tag `
-            --title "GPT + Codex Custom $env:GITHUB_REF_NAME" `
-            @notesArgs
