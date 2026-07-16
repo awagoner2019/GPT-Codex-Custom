@@ -3,7 +3,7 @@
     "project":  "GPTCodexCustom",
     "repository":  "awagoner2019/GPT-Codex-Custom",
     "version":  "0.1.3",
-    "generatedAtUtc":  "2026-07-16T04:14:10.2203679Z",
+    "generatedAtUtc":  "2026-07-16T04:34:36.9500547Z",
     "files":  [
                   {
                       "path":  ".gitattributes",
@@ -17,8 +17,8 @@
                   },
                   {
                       "path":  ".github/ISSUE_TEMPLATE/bug_report.yml",
-                      "sha256":  "94BA7DE796C26B37FF099D4F840ED30BF8EA21F827B41F9D0D415131B34C2017",
-                      "length":  1792
+                      "sha256":  "E43601EBF0DC136C6AB987C65FE01FEF5F2BD5613D6A48E35E66D87FC3183C21",
+                      "length":  1824
                   },
                   {
                       "path":  ".github/ISSUE_TEMPLATE/config.yml",
@@ -29,6 +29,11 @@
                       "path":  ".github/ISSUE_TEMPLATE/feature_request.yml",
                       "sha256":  "0C093669FF2C5C6D4F7A21710C018B6191816BA26AE0949FCC5EC1A47F8EB184",
                       "length":  1009
+                  },
+                  {
+                      "path":  ".github/PULL_REQUEST_TEMPLATE.md",
+                      "sha256":  "1EC56203338173ADECD349A7EE856E35A16B2688D9BE3E4DD9D4108793C00558",
+                      "length":  1276
                   },
                   {
                       "path":  ".github/workflows/publish-release.yml",
@@ -47,8 +52,8 @@
                   },
                   {
                       "path":  "AGENTS.md",
-                      "sha256":  "BE75786C96CA5F9661FF63D0AFC5D2DE4B6A5C1AB4ADF215F6797D001D8CB4A4",
-                      "length":  1695
+                      "sha256":  "879B534DE7A892009194EF456447DD75399FEFF2BE1A1871166AD1E06C8EA460",
+                      "length":  1808
                   },
                   {
                       "path":  "config/update.json",
@@ -57,8 +62,8 @@
                   },
                   {
                       "path":  "CONTRIBUTING.md",
-                      "sha256":  "172B8FA0AC9FF711900F61A2DAA0DC9374AEFDD433E2EEDB8813021DD4E7D065",
-                      "length":  2276
+                      "sha256":  "AF8D0508927A1D1A5DBEADB7A6F96511B1680B5F68CE14E728048CD88DB4BE16",
+                      "length":  2448
                   },
                   {
                       "path":  "custom/gpt-codex-custom.css",
@@ -67,8 +72,8 @@
                   },
                   {
                       "path":  "custom/gpt-codex-custom.js",
-                      "sha256":  "17E19359D4211BA337E32922F23C38D33499F0B605B3BFD4D2410D75B439CF39",
-                      "length":  192962
+                      "sha256":  "E910F3201ACE22D2950363108D5568511D634784CDAC7555250F19E8871C0C35",
+                      "length":  193686
                   },
                   {
                       "path":  "custom/gpt-codex-model-picker.css",
@@ -102,8 +107,8 @@
                   },
                   {
                       "path":  "docs/ARCHITECTURE.md",
-                      "sha256":  "F8D0FAC1F3A9E5A3074CF1DF70C2C50166CE7833442BE3AC6B26571CCB1DEC3A",
-                      "length":  11931
+                      "sha256":  "E2BF93ACE9F9DC554C6B9F3121BBFF14456BC39559205DF6B9673EE01F06A905",
+                      "length":  12432
                   },
                   {
                       "path":  "docs/images/01-model-matrix-ultra-fast.png",
@@ -127,8 +132,8 @@
                   },
                   {
                       "path":  "docs/MODIFYING.md",
-                      "sha256":  "C10ED709D166A4F41A639691906E70866C35A87312D9A3516E89A3508B022AB5",
-                      "length":  4034
+                      "sha256":  "D3C6931C1FABA838037459EC801487129DE617B141FF70ACDE082C00E8C32554",
+                      "length":  4296
                   },
                   {
                       "path":  "docs/RELEASE_0.1.2.md",
@@ -146,9 +151,14 @@
                       "length":  1113
                   },
                   {
+                      "path":  "docs/TESTING.md",
+                      "sha256":  "A2565D76620EB78C9AEDB28EAB9612BB5522A0C9DBF26B11B511E598A3615CB2",
+                      "length":  6691
+                  },
+                  {
                       "path":  "docs/UPDATES.md",
-                      "sha256":  "AA4FA40B0E4E5AF79B9DA2FD68BEB419F4C523CA452502F101988A8DF00A286C",
-                      "length":  3087
+                      "sha256":  "9EF0A9D543EE8EE0B1860A4DA2F452D3E2FD2793FDD6ABBB0CAED1289FD61716",
+                      "length":  3385
                   },
                   {
                       "path":  "docs/UPSTREAM.md",
@@ -162,8 +172,8 @@
                   },
                   {
                       "path":  "package.json",
-                      "sha256":  "C2262B1FA89B14C520DF49368953697CF189948CFBF71FF92A48BE97716D584D",
-                      "length":  3695
+                      "sha256":  "C86DB32B58EE1303C99EC21292ACDF1AD8A3165BF118FA79E8AB5DCAF36D2910",
+                      "length":  3806
                   },
                   {
                       "path":  "package-lock.json",
@@ -172,8 +182,8 @@
                   },
                   {
                       "path":  "README.md",
-                      "sha256":  "8DA466295F0D25227A480F330214A28C5034A3BC4AAF220211B242DA820F8835",
-                      "length":  9596
+                      "sha256":  "BC381370B1EC04589203260B6A5E9C69A28B5E2E4C248F3511E188CDE0EC76E8",
+                      "length":  9935
                   },
                   {
                       "path":  "scripts/Build-Custom.ps1",
@@ -211,9 +221,19 @@
                       "length":  6121
                   },
                   {
+                      "path":  "scripts/Prepare-DiagnosticChat.mjs",
+                      "sha256":  "43E975687FA17D0A2E76DF49457534BE5938B8F59528898DF13584CF8D0381A4",
+                      "length":  4940
+                  },
+                  {
                       "path":  "scripts/Sync-Upstream.ps1",
                       "sha256":  "7110D3F538417649B4A45B9248B7B57CB469C4B78A4808CB7244A9A645DE5856",
                       "length":  8790
+                  },
+                  {
+                      "path":  "scripts/Test-DevelopmentUi.ps1",
+                      "sha256":  "08EBF0B022865001F47F1F8261DC4DBE234A8C849283DAFAAE14AFEA485BEEA1",
+                      "length":  4644
                   },
                   {
                       "path":  "scripts/Test-OfficialPackageBootstrap.ps1",
@@ -237,13 +257,13 @@
                   },
                   {
                       "path":  "scripts/Verify-Custom.ps1",
-                      "sha256":  "69684C21C30D2999BDCB27CD7B5FED300B5F9BE55E859390EEE138F52D339A4F",
-                      "length":  61876
+                      "sha256":  "15C312A44D97B3A06A528670BB0AC96F71B750B2FD08C507EDF4545692A04D84",
+                      "length":  62783
                   },
                   {
                       "path":  "scripts/Verify-Custom-Interactive.ps1",
-                      "sha256":  "F47D4FCD124A8F4FC355AEB8D7B67687DDD39155CAA5D197488542ED4CB5EEE9",
-                      "length":  98487
+                      "sha256":  "0155B60ACAAA8A34EC9D617B3EDC5F3C60AB053D154AABD38EA9B14D9F746DAB",
+                      "length":  98904
                   },
                   {
                       "path":  "scripts/Verify-Model-Picker-Motion.mjs",

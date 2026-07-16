@@ -57,8 +57,13 @@ Only the repository owner should perform these steps:
 1. Finish and verify the source change.
 2. Set a new semantic version in `package.json` and `package-lock.json`.
 3. Run `npm run verify:update`, `npm run build`, and `npm run verify`.
-4. Commit and push the reviewed source to `main`.
-5. Create and push an annotated or lightweight tag matching the version, such
+4. For UI changes, run `npm run verify:ui-suite` and confirm it restores a
+   normal launch without a diagnostics argument.
+5. Regenerate the committed source manifest with
+   `./scripts/New-UpdatePackage.ps1 -WriteProjectManifest` after the final file
+   edit, then rerun `npm run verify:update`.
+6. Commit and push the reviewed source to `main`.
+7. Create and push an annotated or lightweight tag matching the version, such
    as `v0.2.0`.
 
 The `publish-release.yml` workflow runs only for an owner-created version tag,

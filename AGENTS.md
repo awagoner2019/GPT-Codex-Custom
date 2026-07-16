@@ -34,6 +34,7 @@ For normal UI changes:
 ```powershell
 npm run build
 npm run verify
+npm run verify:ui-suite
 ```
 
 For update-system changes:
@@ -44,4 +45,5 @@ npm run verify:update
 
 When a live account-backed UI check is required, use the documented diagnostic
 and self-test commands. Tests must not send chat messages, upload personal
-files, or perform destructive account actions.
+files, or perform destructive account actions. Read `docs/TESTING.md` before
+adding a verifier or using a diagnostic endpoint directly.

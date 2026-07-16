@@ -25,6 +25,11 @@ Timeout for each CDP connect, send, and response operation.
 
 .PARAMETER TargetWaitSeconds
 Maximum time to wait for the exact app://-/index.html target to appear.
+
+.PARAMETER RendererSettleMilliseconds
+Minimum time to let the exact renderer finish its post-launch native/custom
+remount before taking the single read-only snapshot. Set to zero only when the
+caller already established renderer readiness.
 #>
 [CmdletBinding()]
 param(
@@ -37,7 +42,10 @@ param(
     [int]$TimeoutSeconds = 20,
 
     [ValidateRange(1, 60)]
-    [int]$TargetWaitSeconds = 45
+    [int]$TargetWaitSeconds = 45,
+
+    [ValidateRange(0, 15000)]
+    [int]$RendererSettleMilliseconds = 3000
 )
 
 $ErrorActionPreference = "Stop"
@@ -2174,6 +2182,9 @@ try {
     Assert-IsolatedDevToolsPortPath -Path $DevToolsActivePortPath
     $debugPort = Get-DebugPort -Path $DevToolsActivePortPath
     $target = Get-ExactRendererTarget -DebugPort $debugPort -WaitSeconds $TargetWaitSeconds
+    if ($RendererSettleMilliseconds -gt 0) {
+        Start-Sleep -Milliseconds $RendererSettleMilliseconds
+    }
 
     $socket = [System.Net.WebSockets.ClientWebSocket]::new()
     $socket.Options.KeepAliveInterval = [TimeSpan]::FromSeconds(10)

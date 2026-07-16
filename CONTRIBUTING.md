@@ -26,7 +26,8 @@ other private data. Do not upload `profile/`, `logs/`, `work/`, or `vendor/`.
 4. Run `npm run verify:installer` and `npm run verify:update` in a clean source
    checkout.
 5. If you have initialized a private runtime, also run `npm run build` and
-   `npm run verify`. Run the relevant interactive checks for UI behavior.
+   `npm run verify`. For UI behavior, run `npm run verify:ui-suite`; it restores
+   the normal non-diagnostic app after the live checks finish.
 6. Explain the native behavior used, the compatibility assumptions, and the
    checks you ran.
 
@@ -45,6 +46,8 @@ account action.
 When adding or changing a feature, update the strict checks in
 `scripts/Verify-Custom.ps1` and, where appropriate, the runtime self-test. A
 visual match without a working native action is not considered complete.
+See [Testing](docs/TESTING.md) for the safety classification and expected
+evidence for each verifier.
 
 ## Releases
 

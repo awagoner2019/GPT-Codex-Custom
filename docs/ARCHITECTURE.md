@@ -178,7 +178,9 @@ as "Voice mode" and does not depend on private ChatGPT web endpoints.
 loopback DevTools port recorded beneath `profile/chromium`. With that instance
 running, `npm run verify:interactive` accepts only that isolated port file and
 the exact `app://-/index.html` target, then performs read-only DOM and diagnostic
-probe inspection. It validates custom Chat structure, search, token precision,
+probe inspection. It gives the mounted renderer a three-second settle window by
+default so the native/custom post-launch remount cannot produce a false missing-
+control result. It validates custom Chat structure, search, token precision,
 the pinboard's local-only contract, selector structure, and obvious geometry
 collisions; native composer controls are observations rather than proof of their
 end-to-end workflows. It never clicks, sends, uploads, regenerates, or starts
@@ -202,6 +204,12 @@ verifies focus restoration, then uploads a synthetic PNG through the native
 attachment service in temporary mode. It requires a ready attachment and the
 `picture_v2` hint, removes the attachment, and restores the prior hint. No chat
 message is sent and no conversation/share state is changed.
+
+`npm run verify:ui-suite` composes the strict self-test, isolated diagnostics,
+read-only inspection, Chat-action evidence gate, model-picker motion verifier,
+and token-dock verifier. Its outer `finally` path replaces the diagnostic process
+with a normal custom launch. The complete safety and evidence matrix lives in
+[Testing](TESTING.md).
 
 The copied executable remains byte-identical to upstream. Only the copied
 `app.asar` and copied `owl-app.ini` change. The latter assigns the custom build

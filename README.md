@@ -133,13 +133,15 @@ hours. `npm run launch:no-update` skips that check.
 npm run upstream:check
 npm run build
 npm run verify
-npm run launch:replace
+npm run verify:ui-suite
 ```
 
 Edit the maintained modules under `custom/`, then rebuild. The build patches only
 the private runtime under `work/runtime/`. Read [Modifying the UI](docs/MODIFYING.md)
 before changing selectors or adding a module, and see [Architecture](docs/ARCHITECTURE.md)
-for the native bridge design.
+for the native bridge design. The UI suite runs every non-destructive live gate
+and restores a normal launch when it finishes; see [Testing](docs/TESTING.md) for
+the command matrix and safety boundaries.
 
 When the Store app changes, close the custom copy and run:
 
@@ -167,6 +169,7 @@ npm run verify:token-dock
 Runtime checks:
 
 ```powershell
+npm run verify:ui-suite
 npm run self-test
 npm run launch:diagnostics
 npm run verify:interactive
@@ -178,7 +181,8 @@ switching, history/search, New chat, Share/Rename/Pin/Archive/Delete dry-runs,
 full-screen image open/close/focus restoration, native image attachment staging,
 Library routing, model picker state, token HUD state, and pinboard storage.
 Diagnostic endpoints bind only to loopback and exist only for the isolated
-custom profile.
+custom profile. `verify:ui-suite` is the preferred pre-commit path because it
+always replaces the temporary diagnostic process with a normal custom launch.
 
 See the sanitized [Feature showcase](docs/SHOWCASE.md) for the current model
 matrix, token dock, and persistent Chat/Work/Codex selector.

@@ -26,10 +26,14 @@
 4. Run `npm run build`.
 5. Run `npm run verify`.
 6. Launch and exercise the exact affected path.
-7. Run `npm run self-test` and any focused diagnostic verifier.
+7. Run `npm run verify:ui-suite` before handoff or publication.
 
 `npm run launch:replace` deliberately closes only processes whose executable
 path matches this project's copied runtime. It never targets the Store build.
+The consolidated UI suite uses that same exact-path guard, waits for the
+post-launch renderer remount, and restores a normal non-diagnostic launch in a
+`finally` path even when a verifier fails. Use the focused commands in
+[Testing](TESTING.md) while iterating.
 
 ## Native bridges first
 

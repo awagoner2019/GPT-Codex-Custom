@@ -3273,6 +3273,26 @@ async function runChatSidebarSelfTest() {
   if (new URLSearchParams(window.location.search).has("initialRoute")) return;
   markChatSidebarSelfTestProgress("starting");
 
+  let storedProductModeBeforeSelfTest = null;
+  try {
+    storedProductModeBeforeSelfTest = localStorage.getItem(CHAT_MODE_STORAGE_KEY);
+  } catch {
+    // A locked-down profile can disable storage; the current session still works.
+  }
+  const restoreStoredProductMode = () => {
+    try {
+      if (storedProductModeBeforeSelfTest == null) {
+        localStorage.removeItem(CHAT_MODE_STORAGE_KEY);
+      } else {
+        localStorage.setItem(CHAT_MODE_STORAGE_KEY, storedProductModeBeforeSelfTest);
+      }
+    } catch {
+      // Keep self-test cleanup best-effort when local storage is unavailable.
+    }
+  };
+
+  try {
+
   let selfTestAttempt = 0;
   try {
     selfTestAttempt = Number(sessionStorage.getItem(CHAT_SELF_TEST_STORAGE_KEY)) || 0;
@@ -4258,6 +4278,9 @@ async function runChatSidebarSelfTest() {
     ...result,
   });
   scheduleDiagnostics();
+  } finally {
+    restoreStoredProductMode();
+  }
 }
 
 let chatSidebarSelfTestPromise = null;
@@ -4869,7 +4892,8 @@ Object.defineProperty(globalThis, "GPT_CODEX_CUSTOM_BUILD", {
 Object.defineProperty(globalThis, "GPT_CODEX_CUSTOM_OPEN_CHAT", {
   configurable: false,
   enumerable: false,
-  value: () => setChatMode(true, { launch: true }),
+  value: (options = {}) =>
+    setChatMode(true, { launch: true, persist: options?.persist !== false }),
   writable: false,
 });
 

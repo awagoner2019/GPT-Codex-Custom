@@ -723,6 +723,8 @@ $MaintainedTokenHudCss = Join-Path $ProjectRoot "custom\gpt-codex-token-hud.css"
 $MaintainedTokenHudJs = Join-Path $ProjectRoot "custom\gpt-codex-token-hud.js"
 $MaintainedModelPickerCss = Join-Path $ProjectRoot "custom\gpt-codex-model-picker.css"
 $MaintainedModelPickerJs = Join-Path $ProjectRoot "custom\gpt-codex-model-picker.js"
+$DevelopmentUiVerifier = Join-Path $ProjectRoot "scripts\Test-DevelopmentUi.ps1"
+$DiagnosticChatPreparation = Join-Path $ProjectRoot "scripts\Prepare-DiagnosticChat.mjs"
 $OwlIni = Join-Path $ProjectRoot "work\runtime\resources\owl-app.ini"
 $AsarCli = Join-Path $ProjectRoot "node_modules\@electron\asar\bin\asar.js"
 $DiagnosticsFile = Join-Path $ProjectRoot "profile\chromium\gpt-codex-custom-diagnostics.json"
@@ -761,6 +763,8 @@ foreach ($requiredPath in @(
     $MaintainedTokenHudJs,
     $MaintainedModelPickerCss,
     $MaintainedModelPickerJs,
+    $DevelopmentUiVerifier,
+    $DiagnosticChatPreparation,
     $OwlIni,
     $AsarCli
 )) {
@@ -775,6 +779,8 @@ $MaintainedTokenHudCssText = Get-Content -Raw -LiteralPath $MaintainedTokenHudCs
 $MaintainedTokenHudJsText = Get-Content -Raw -LiteralPath $MaintainedTokenHudJs
 $MaintainedModelPickerCssText = Get-Content -Raw -LiteralPath $MaintainedModelPickerCss
 $MaintainedModelPickerJsText = Get-Content -Raw -LiteralPath $MaintainedModelPickerJs
+$DevelopmentUiVerifierText = Get-Content -Raw -LiteralPath $DevelopmentUiVerifier
+$DiagnosticChatPreparationText = Get-Content -Raw -LiteralPath $DiagnosticChatPreparation
 $StartupModeContractEvaluation = Get-StartupModeContractEvaluation `
     -DiagnosticsPath $DiagnosticsFile `
     -RuntimeAsarPath $RuntimeAsar
@@ -954,6 +960,8 @@ $results = [ordered]@{
     rendererModelPickerInjectionPresent = ((Get-Content -Raw -LiteralPath $PatchedIndex).Contains("gpt-codex-model-picker-"))
     sideBySideBootstrap = ($PatchedBootstrap.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedBootstrap[0].FullName).Contains("GPT_CODEX_CUSTOM_BUILD"))
     firstClassChatProductMode = ($PatchedAppMain.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedAppMain[0].FullName).Contains("GPT_CODEX_CUSTOM_OPEN_CHAT"))
+    selfTestProductModeRestorationIntegrated = ($MaintainedCustomJsText.Contains("storedProductModeBeforeSelfTest") -and $MaintainedCustomJsText.Contains("restoreStoredProductMode"))
+    developmentUiSuiteContractPresent = ($DevelopmentUiVerifierText.Contains("Transient Chat-mode preparation") -and $DevelopmentUiVerifierText.Contains("Restore normal custom runtime") -and $DiagnosticChatPreparationText.Contains('openChat({ persist: false })') -and $DiagnosticChatPreparationText.Contains("storedModeUnchanged"))
     firstRunProductModeContract = ($StartupModeContractEvaluation.Passed -eq $true)
     persistentProductSelectorBridge = ($PatchedAppMain.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedAppMain[0].FullName).Contains("GPT_CODEX_CUSTOM_NATIVE_PRODUCT_MODES") -and (Get-Content -Raw -LiteralPath $CustomJs).Contains("gptCodexCustomProductSelector"))
     nativeChatSearchIntegrated = ($PatchedAppMain.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedAppMain[0].FullName).Contains("GPT_CODEX_CUSTOM_CHAT_SEARCH") -and (Get-Content -Raw -LiteralPath $CustomJs).Contains("GPT_CODEX_CUSTOM_SYNC_CHAT_SEARCH"))

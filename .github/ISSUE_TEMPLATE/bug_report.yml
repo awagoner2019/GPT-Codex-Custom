@@ -54,7 +54,7 @@ body:
     id: verification
     attributes:
       label: Verification output
-      description: Paste sanitized output from npm run verify or the relevant diagnostic check.
+      description: Paste sanitized output from npm run verify, npm run verify:ui-suite, or the smallest relevant focused check.
       render: shell
   - type: checkboxes
     id: safety
