@@ -7,7 +7,9 @@ This repository contains only the customization source, build scripts, updater,
 tests, and documentation. It does **not** redistribute OpenAI binaries, the
 installed app's source archive, account data, cookies, conversations, credentials,
 or any local Codex profile. Setup makes a private working copy from the app already
-installed on your own PC. The Microsoft Store/MSIX installation remains read-only.
+installed for your Windows account. If it is missing, setup downloads and verifies
+Microsoft's official signed ChatGPT installer, opens it, and resumes automatically
+after the package is ready. The official package remains read-only.
 
 > [!IMPORTANT]
 > This is an independent community project. It is not an OpenAI release and is
@@ -60,13 +62,27 @@ Git and release packages:
 ## Requirements
 
 - Windows 10 or 11.
-- The current official combined ChatGPT/Codex Microsoft Store app installed as
-  package `OpenAI.Codex`.
+- Internet access and the Windows App Installer/Store service for first setup.
+- Access to the official combined ChatGPT/Codex package as `OpenAI.Codex`.
+  You do not need to browse to the Store or install it before running setup;
+  setup opens Microsoft's official signed installer automatically when needed.
 - PowerShell 5.1 or newer.
 - Node.js 20 or newer with npm.
 - Enough free disk space for a private copy of the installed app.
 
 ## Fresh setup
+
+Recommended release install:
+
+1. Download and extract `gpt-codex-custom-update.zip` from the latest release.
+2. Double-click `Install-GPT-Codex-Custom.cmd`.
+
+The setup checks Node.js/npm, installs the pinned build dependency, opens
+Microsoft's verified ChatGPT installer only when required, builds the isolated
+runtime, runs verification, and offers to launch it. See
+[Installation](docs/INSTALLATION.md) for the trust chain and recovery guide.
+
+Manual source setup:
 
 ```powershell
 git clone https://github.com/awagoner2019/GPT-Codex-Custom.git
@@ -76,10 +92,35 @@ npm run setup
 npm run launch
 ```
 
-`npm run setup` copies the installed app into this repository's ignored
-`vendor/` and `work/` directories, verifies the copied hashes, extracts the
-private upstream snapshot, builds the custom archive, and runs the static
-verification gate. It refuses to overwrite an existing local snapshot.
+`npm run setup` first detects the official package. If it is absent, setup
+downloads the installer only from Microsoft's pinned ChatGPT product URL,
+requires a valid Microsoft Authenticode signature and Store Installer identity,
+opens that installer, and waits for package registration. It then copies the
+official app into this repository's ignored `vendor/` and `work/` directories,
+verifies the copied hashes, extracts the private upstream snapshot, builds the
+custom archive, and runs the static verification gate. It refuses to overwrite
+an existing local snapshot.
+
+To test the download and signature gate without installing anything:
+
+```powershell
+npm run bootstrap:verify
+```
+
+For managed/offline systems where an administrator supplies the official
+package separately, `npm run setup:no-bootstrap` disables the automatic
+installer and fails if `OpenAI.Codex` is unavailable.
+
+## Why releases contain no standalone OpenAI payload
+
+OpenAI's current terms do not grant this project permission to redistribute a
+modified copy of the desktop app or its licensed binaries. Releases therefore
+contain only the independently maintained customization and setup code. The
+one-command bootstrap is the closest non-redistributing deployment model: each
+user obtains the official package from Microsoft under their own account, and
+the repository never hosts that payload. See the
+[OpenAI Terms of Use](https://openai.com/policies/terms-of-use/) and
+[OpenAI Service Terms](https://openai.com/policies/service-terms/).
 
 After a successful setup, `Start-GPT-Codex-Custom.cmd` launches the custom copy.
 The normal launcher checks for a custom-source update at most once every 24
@@ -115,6 +156,7 @@ fails. It never writes to the Store installation.
 Static and release-safe checks:
 
 ```powershell
+npm run verify:installer
 npm run verify
 npm run verify:update
 npm run verify:motion
@@ -134,6 +176,9 @@ deleting a chat. It covers product switching, history/search, New chat, edit and
 delete dry-runs, image attachment staging, Library routing, model picker state,
 token HUD state, and pinboard storage. Diagnostic endpoints bind only to
 loopback and exist only for the isolated custom profile.
+
+See the sanitized [Feature showcase](docs/SHOWCASE.md) for the current model
+matrix, token dock, and persistent Chat/Work/Codex selector.
 
 ## Custom source updates
 

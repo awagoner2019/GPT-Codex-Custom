@@ -23,7 +23,8 @@ other private data. Do not upload `profile/`, `logs/`, `work/`, or `vendor/`.
 2. Run `npm ci`.
 3. Make changes only in maintained source such as `custom/`, `scripts/`,
    `docs/`, or `.github/`.
-4. Run `npm run verify:update` in a clean source checkout.
+4. Run `npm run verify:installer` and `npm run verify:update` in a clean source
+   checkout.
 5. If you have initialized a private runtime, also run `npm run build` and
    `npm run verify`. Run the relevant interactive checks for UI behavior.
 6. Explain the native behavior used, the compatibility assumptions, and the

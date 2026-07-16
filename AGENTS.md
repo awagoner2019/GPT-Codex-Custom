@@ -9,8 +9,9 @@ ChatGPT/Codex Windows desktop app.
 - Never edit the installed Microsoft Store/MSIX package.
 - Never commit or publish `vendor/`, `work/`, `profile/`, `logs/`, `updates/`,
   `node_modules/`, cookies, account state, credentials, or chat content.
-- Treat the installed app as a read-only input. Users must supply it from their
-  own lawful installation.
+- Treat the installed app as a read-only input. Setup may acquire it only through
+  the pinned official Microsoft installer and must verify that installer before
+  launch; never mirror or redistribute the package payload.
 - Keep the copied executable byte-identical to upstream. Customization belongs
   in the copied `app.asar` and project-owned launch/profile configuration.
 - Do not replace exact-match upstream bridges with broad, uncertain patches.

@@ -10,6 +10,21 @@ The application payload is a Chromium shell named Owl. Its metadata says it was
 packaged from an Electron output directory, and the extracted package declares
 Electron 42.1.0.
 
+### First-run acquisition
+
+The repository never carries the MSIX payload. `npm run setup` first looks for
+the user's official `OpenAI.Codex` package. When it is absent,
+`scripts/Ensure-OfficialPackage.ps1` downloads Microsoft's Store Installer from
+the pinned ChatGPT product ID `9PLM9XGG6VKS`, accepts only HTTPS on
+`get.microsoft.com`, validates the PE header, size, Microsoft Authenticode
+signature, company, and Store Installer product identity, then opens it. Setup
+waits for Windows to register `OpenAI.Codex` before it stages the private copy.
+
+`npm run bootstrap:verify` exercises the same download and trust checks, deletes
+the temporary file, and never launches the installer. This removes the manual
+Store-navigation prerequisite without redistributing or directly registering an
+OpenAI package.
+
 ## Runtime layers
 
 ```text

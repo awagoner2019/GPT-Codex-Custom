@@ -1,5 +1,7 @@
 [CmdletBinding()]
-param()
+param(
+    [switch]$SkipOfficialInstaller
+)
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
@@ -18,6 +20,7 @@ $ManifestPath = Join-Path $ProjectRoot "upstream.json"
 $AsarCli = Join-Path $ProjectRoot "node_modules\@electron\asar\bin\asar.js"
 $BuildScript = Join-Path $PSScriptRoot "Build-Custom.ps1"
 $VerifyScript = Join-Path $PSScriptRoot "Verify-Custom.ps1"
+$OfficialPackageScript = Join-Path $PSScriptRoot "Ensure-OfficialPackage.ps1"
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
 function Assert-ProjectPath {
@@ -30,14 +33,16 @@ function Assert-ProjectPath {
     }
 }
 
-foreach ($requiredPath in @($AsarCli, $BuildScript, $VerifyScript)) {
+foreach ($requiredPath in @($AsarCli, $BuildScript, $VerifyScript, $OfficialPackageScript)) {
     if (-not (Test-Path -LiteralPath $requiredPath)) {
         throw "Required setup dependency is missing: $requiredPath`nRun npm ci before npm run setup."
     }
 }
 
-$existingState = @($VendorPackage, $UpstreamSource, $RuntimeRoot) |
-    Where-Object { Test-Path -LiteralPath $_ }
+$existingState = @(
+    @($VendorPackage, $UpstreamSource, $RuntimeRoot) |
+        Where-Object { Test-Path -LiteralPath $_ }
+)
 if ($existingState.Count -gt 0) {
     throw "This project already has an isolated upstream snapshot. Use npm run upstream:sync to refresh it. Existing paths: $($existingState -join ', ')"
 }
@@ -46,7 +51,18 @@ $installed = Get-AppxPackage -Name "OpenAI.Codex" |
     Sort-Object Version -Descending |
     Select-Object -First 1
 if ($null -eq $installed) {
-    throw "The installed OpenAI.Codex Microsoft Store package was not found. Install the current combined ChatGPT/Codex Windows app first."
+    if ($SkipOfficialInstaller) {
+        throw "The OpenAI.Codex package was not found and automatic official-installer bootstrap was disabled."
+    }
+
+    Write-Host "The official package is missing; starting the verified OpenAI/Microsoft installer bootstrap."
+    & $OfficialPackageScript | Out-Host
+    $installed = Get-AppxPackage -Name "OpenAI.Codex" |
+        Sort-Object Version -Descending |
+        Select-Object -First 1
+    if ($null -eq $installed) {
+        throw "The official installer completed without making the OpenAI.Codex package available. Run npm run setup again after installation finishes."
+    }
 }
 
 $installedAsar = Join-Path $installed.InstallLocation "app\resources\app.asar"
@@ -124,7 +140,7 @@ try {
     & $VerifyScript
 
     Write-Host "GPT + Codex Custom is initialized and verified." -ForegroundColor Green
-    Write-Host "The installed Store package was read but not modified."
+    Write-Host "The official installed package was read but not modified."
 } catch {
     $failure = $_
     foreach ($target in @($createdTargets | Sort-Object { $_.Length } -Descending)) {

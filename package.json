@@ -1,6 +1,6 @@
 {
   "name": "gpt-codex-custom",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Isolated UI customization layer for a copied GPT/Codex desktop build.",
   "repository": {
@@ -16,6 +16,10 @@
   },
   "scripts": {
     "setup": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Initialize-Custom.ps1",
+    "setup:no-bootstrap": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Initialize-Custom.ps1 -SkipOfficialInstaller",
+    "bootstrap:verify": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Ensure-OfficialPackage.ps1 -VerifyDownloadOnly",
+    "verify:bootstrap": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Test-OfficialPackageBootstrap.ps1",
+    "verify:installer": "cmd /d /c Install-GPT-Codex-Custom.cmd --check && powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Test-OfficialPackageBootstrap.ps1",
     "build": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Build-Custom.ps1",
     "launch": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Launch-Custom.ps1",
     "launch:no-update": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Launch-Custom.ps1 -SkipUpdateCheck",

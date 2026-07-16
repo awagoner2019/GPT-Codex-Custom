@@ -34,6 +34,10 @@ jobs:
       - name: Install pinned dependencies
         run: npm ci
 
+      - name: Verify one-click installer and official bootstrap
+        shell: powershell
+        run: npm run verify:installer
+
       - name: Verify updater and public package boundary
         shell: powershell
         run: npm run verify:update
@@ -47,10 +51,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          $version = $env:GITHUB_REF_NAME.TrimStart("v")
+          $notesFile = "docs/RELEASE_$($version.Replace('.', '_')).md"
+          $notesArgs = if (Test-Path -LiteralPath $notesFile) {
+            @("--notes-file", $notesFile)
+          } else {
+            @("--generate-notes")
+          }
           gh release create $env:GITHUB_REF_NAME `
             dist/gpt-codex-custom-update.zip `
             dist/gpt-codex-custom-update.zip.sha256 `
             --repo $env:GITHUB_REPOSITORY `
             --verify-tag `
-            --generate-notes `
-            --title "GPT + Codex Custom $env:GITHUB_REF_NAME"
+            --title "GPT + Codex Custom $env:GITHUB_REF_NAME" `
+            @notesArgs

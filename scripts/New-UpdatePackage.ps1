@@ -44,6 +44,7 @@ $topLevelFiles = @(
     ".gitignore",
     "AGENTS.md",
     "CONTRIBUTING.md",
+    "Install-GPT-Codex-Custom.cmd",
     "README.md",
     "SECURITY.md",
     "Start-GPT-Codex-Custom.cmd",

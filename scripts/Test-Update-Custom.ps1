@@ -59,6 +59,16 @@ try {
     if ($forbiddenPackageEntries.Count -gt 0) {
         throw "The generated update package contains excluded state: $($forbiddenPackageEntries -join ', ')"
     }
+    foreach ($requiredPublicFile in @(
+        "Install-GPT-Codex-Custom.cmd",
+        "docs\INSTALLATION.md",
+        "scripts\Ensure-OfficialPackage.ps1",
+        "scripts\Test-OfficialPackageBootstrap.ps1"
+    )) {
+        if (-not (Test-Path -LiteralPath (Join-Path $ExtractAuditRoot $requiredPublicFile) -PathType Leaf)) {
+            throw "The generated update package is missing required setup content: $requiredPublicFile"
+        }
+    }
 
     New-Item -ItemType Directory -Force -Path `
         (Join-Path $FixtureRoot "config"), `
@@ -218,6 +228,9 @@ try {
     }
     if (-not (Test-Path -LiteralPath (Join-Path $FixtureRoot "scripts\Update-Custom.ps1") -PathType Leaf)) {
         throw "The updater did not install maintained source files."
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $FixtureRoot "Install-GPT-Codex-Custom.cmd") -PathType Leaf)) {
+        throw "The updater did not install the one-click setup launcher."
     }
 
     Write-Host "Updater verification passed: hashing, archive allowlist, local-change refusal, retired-file cleanup, apply, and private-state preservation." -ForegroundColor Green

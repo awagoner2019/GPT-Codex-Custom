@@ -46,6 +46,10 @@ jobs:
           }
           if ($failed) { throw "PowerShell parse checks failed." }
 
+      - name: Verify official installer bootstrap
+        shell: powershell
+        run: npm run verify:installer
+
       - name: Verify updater and public package boundary
         shell: powershell
         run: npm run verify:update

@@ -13,7 +13,7 @@ body:
     attributes:
       label: Custom version
       description: The version in package.json.
-      placeholder: 0.1.1
+      placeholder: 0.1.2
     validations:
       required: true
   - type: input
@@ -32,6 +32,7 @@ body:
         - Chat
         - Work
         - Codex
+        - Installer or first setup
         - Launcher, updater, or build tooling
         - Cross-mode or unknown
     validations:

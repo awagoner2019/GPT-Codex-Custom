@@ -18,12 +18,14 @@ desktop process runs as `ChatGPT.exe`, while Codex native runtimes live under
 `app/resources/`.
 
 `upstream.json` is the machine-readable fingerprint used by build and
-verification scripts. Run `npm run upstream:check` to detect an installed Store
-update. After reviewing a new package, close the custom copy and run
+verification scripts. A fresh `npm run setup` automatically opens Microsoft's
+official signed ChatGPT installer if this package is not already available;
+`npm run bootstrap:verify` validates that download without installing it. Run
+`npm run upstream:check` to detect an installed Store update. After reviewing a
+new package, close the custom copy and run
 `npm run upstream:sync`; it stages a fresh isolated copy, requires every
 compatibility needle to match, verifies the candidate, and rolls back the custom
 snapshot if any step fails.
 
 The repository never contains the copied package or extracted archive. Each user
-must create those private files from their own installed app with
-`npm run setup`.
+creates those private files from their own official package with `npm run setup`.
