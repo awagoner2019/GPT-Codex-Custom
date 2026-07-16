@@ -1,0 +1,55 @@
+name: Publish custom source release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: github.actor == github.repository_owner
+    runs-on: windows-latest
+    steps:
+      - name: Check out owner-tagged source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Require tag and package versions to match
+        shell: powershell
+        run: |
+          $packageVersion = [string](Get-Content -Raw package.json | ConvertFrom-Json).version
+          $expectedTag = "v$packageVersion"
+          if ($env:GITHUB_REF_NAME -ne $expectedTag) {
+            throw "Tag $env:GITHUB_REF_NAME does not match package.json version $packageVersion. Expected $expectedTag."
+          }
+
+      - name: Install pinned dependencies
+        run: npm ci
+
+      - name: Verify updater and public package boundary
+        run: npm run verify:update
+
+      - name: Create allowlisted release assets
+        shell: powershell
+        run: ./scripts/New-UpdatePackage.ps1
+
+      - name: Publish GitHub release
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create $env:GITHUB_REF_NAME `
+            dist/gpt-codex-custom-update.zip `
+            dist/gpt-codex-custom-update.zip.sha256 `
+            --repo $env:GITHUB_REPOSITORY `
+            --verify-tag `
+            --generate-notes `
+            --title "GPT + Codex Custom $env:GITHUB_REF_NAME"

@@ -1,0 +1,984 @@
+/*
+ * Maintained UI override layer for the copied GPT/Codex renderer.
+ * Keep overrides here instead of editing upstream's hashed Vite bundles.
+ */
+
+:root {
+  --gpt-codex-custom-accent: #8b7cff;
+  --gpt-codex-custom-accent-strong: #6f5cff;
+  --gpt-codex-custom-badge-bg: rgb(18 18 24 / 0.88);
+  --gpt-codex-custom-badge-border: rgb(255 255 255 / 0.16);
+  --gpt-codex-custom-badge-text: #f7f5ff;
+  --gpt-codex-custom-sidebar-right: 260px;
+  --gpt-codex-custom-chat-sidebar-top: var(--height-toolbar, 48px);
+  --gpt-codex-custom-chat-rail-bg: #171717;
+  --gpt-codex-custom-chat-surface: #212121;
+  --gpt-codex-custom-chat-hover: #2f2f2f;
+  --gpt-codex-custom-chat-active: #343434;
+  --gpt-codex-custom-chat-border: rgb(255 255 255 / 0.08);
+  --gpt-codex-custom-chat-text: #ececec;
+  --gpt-codex-custom-chat-muted: #a6a6a6;
+  --gpt-codex-custom-chat-rail-current: var(--gpt-codex-custom-sidebar-right);
+}
+
+:root[data-gpt-codex-custom="ready"] ::selection {
+  background: color-mix(in srgb, var(--gpt-codex-custom-accent) 42%, transparent);
+}
+
+:root[data-gpt-codex-custom="ready"] :focus-visible {
+  outline-color: var(--gpt-codex-custom-accent) !important;
+}
+
+#gpt-codex-custom-build-badge {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 2147483647;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 24px;
+  padding: 4px 9px;
+  border: 1px solid var(--gpt-codex-custom-badge-border);
+  border-radius: 999px;
+  background: var(--gpt-codex-custom-badge-bg);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.22);
+  color: var(--gpt-codex-custom-badge-text);
+  font: 600 10px/1.2 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  text-transform: uppercase;
+  user-select: none;
+  backdrop-filter: blur(14px) saturate(130%);
+}
+
+#gpt-codex-custom-build-badge::before {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gpt-codex-custom-accent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--gpt-codex-custom-accent) 76%, transparent);
+  content: "";
+}
+
+/*
+ * Chat is an upstream, account-backed ChatGPT surface. In custom Chat mode we
+ * promote its floating shell into the main workspace while preserving the
+ * native sidebar, history, composer, and conversation implementation.
+ */
+:root[data-gpt-codex-custom-mode="chat"] [data-pip-obstacle="quick-chat"] {
+  position: fixed !important;
+  inset: var(--height-toolbar, 48px) 0 0 var(--gpt-codex-custom-chat-rail-current) !important;
+  z-index: 29 !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  background: var(--color-token-bg-primary, var(--token-main-surface-primary, var(--gpt-codex-custom-chat-surface))) !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+  transition: inset-inline-start 160ms ease !important;
+}
+
+/* Destination pages render in the native app shell underneath Quick Chat.
+ * Hide the promoted overlay while a Chat sidebar destination is active so the
+ * routed page is actually visible and interactive. */
+:root[data-gpt-codex-custom-mode="chat"][data-gpt-codex-custom-aux-view]
+  [data-pip-obstacle="quick-chat"] {
+  display: none !important;
+}
+
+:root[data-gpt-codex-custom-mode="chat"] [data-gpt-codex-custom-native-mode],
+:root[data-gpt-codex-custom-mode="chat"] [data-gpt-codex-custom-product-brand] {
+  display: none !important;
+}
+
+:root[data-gpt-codex-custom-mode="chat"] [data-pip-obstacle="quick-chat"] [data-quick-chat-drag-handle] {
+  cursor: default !important;
+}
+
+:root[data-gpt-codex-custom-mode="chat"] #gpt-codex-custom-build-badge {
+  display: none !important;
+}
+
+#gpt-codex-custom-chat-sidebar {
+  position: fixed;
+  inset: var(--height-toolbar, 48px) auto 0 0;
+  z-index: 31;
+  display: flex;
+  width: var(--gpt-codex-custom-chat-rail-current);
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--gpt-codex-custom-chat-border);
+  background: var(--token-sidebar-surface-primary, var(--gpt-codex-custom-chat-rail-bg));
+  color: var(--token-text-primary, var(--gpt-codex-custom-chat-text));
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  transition: width 160ms ease, transform 160ms ease;
+}
+
+#gpt-codex-custom-chat-sidebar[hidden] {
+  display: none !important;
+}
+
+.gpt-codex-custom-chat-sidebar-brand,
+.gpt-codex-custom-chat-sidebar-header {
+  position: relative;
+  display: flex;
+  height: 52px;
+  flex: 0 0 52px;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 12px;
+}
+
+.gpt-codex-custom-chat-sidebar-brand-title {
+  display: inline-flex;
+  height: 34px;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 9px;
+  overflow: hidden;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gpt-codex-custom-chat-product-chevron {
+  width: 14px;
+  height: 14px;
+  flex-basis: 14px;
+  transform: rotate(90deg);
+  opacity: 0.65;
+}
+
+.gpt-codex-custom-chat-sidebar-brand-title:hover,
+.gpt-codex-custom-chat-sidebar-brand-title[aria-expanded="true"] {
+  background: var(--token-list-hover-background, var(--gpt-codex-custom-chat-hover));
+}
+
+.gpt-codex-custom-chat-product-menu {
+  position: absolute;
+  z-index: 70;
+  top: 44px;
+  left: 10px;
+  display: grid;
+  width: min(238px, calc(var(--gpt-codex-custom-chat-rail-current) - 20px));
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--gpt-codex-custom-chat-border);
+  border-radius: 13px;
+  background: var(--token-main-surface-secondary, #2b2b2b);
+  box-shadow: 0 18px 48px rgb(0 0 0 / 0.34);
+}
+
+.gpt-codex-custom-chat-product-menu[hidden] {
+  display: none !important;
+}
+
+.gpt-codex-custom-chat-product-orientation {
+  display: grid;
+  gap: 3px;
+  margin: 1px 2px 5px;
+  padding: 7px 8px 10px;
+  border-bottom: 1px solid var(--gpt-codex-custom-chat-border);
+}
+
+.gpt-codex-custom-chat-product-orientation-title {
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.gpt-codex-custom-chat-product-orientation-copy {
+  color: var(--gpt-codex-custom-chat-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.gpt-codex-custom-chat-product-options {
+  display: grid;
+  gap: 2px;
+}
+
+.gpt-codex-custom-chat-product-option {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.gpt-codex-custom-chat-product-option:hover,
+.gpt-codex-custom-chat-product-option:focus-visible {
+  background: var(--token-list-hover-background, var(--gpt-codex-custom-chat-hover));
+}
+
+.gpt-codex-custom-chat-product-option-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.gpt-codex-custom-chat-product-option-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.gpt-codex-custom-chat-product-option-description {
+  color: var(--gpt-codex-custom-chat-muted);
+  font-size: 12px;
+}
+
+.gpt-codex-custom-chat-product-option-check {
+  flex: 0 0 auto;
+  font-size: 14px;
+}
+
+.gpt-codex-custom-chat-sidebar-collapse {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+  flex: 0 0 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.gpt-codex-custom-chat-sidebar-nav {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 2px;
+  padding: 2px 8px 8px;
+}
+
+.gpt-codex-custom-chat-nav-row,
+.gpt-codex-custom-chat-sidebar-new,
+.gpt-codex-custom-chat-item,
+.gpt-codex-custom-chat-sidebar-item,
+.gpt-codex-custom-chat-more-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.gpt-codex-custom-chat-nav-row,
+.gpt-codex-custom-chat-sidebar-new {
+  display: flex;
+  height: 36px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.gpt-codex-custom-chat-nav-icon {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  place-items: center;
+  color: var(--gpt-codex-custom-chat-text);
+}
+
+.gpt-codex-custom-chat-nav-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.gpt-codex-custom-chat-nav-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gpt-codex-custom-chat-nav-row:hover,
+.gpt-codex-custom-chat-sidebar-new:hover,
+.gpt-codex-custom-chat-item:hover,
+.gpt-codex-custom-chat-sidebar-item:hover,
+.gpt-codex-custom-chat-more-item:hover,
+.gpt-codex-custom-chat-sidebar-collapse:hover,
+.gpt-codex-custom-chat-account:hover {
+  background: var(--token-list-hover-background, var(--gpt-codex-custom-chat-hover));
+}
+
+.gpt-codex-custom-generated-image-host {
+  position: relative;
+}
+
+.gpt-codex-custom-image-edit {
+  display: inline-flex;
+  min-width: 52px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 13px;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: 999px;
+  background: rgb(20 20 20 / 0.72);
+  box-shadow: 0 3px 16px rgb(0 0 0 / 0.22);
+  color: #fff;
+  cursor: pointer;
+  font: 600 13px/1 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  backdrop-filter: blur(12px);
+}
+
+.gpt-codex-custom-image-edit:hover {
+  background: rgb(20 20 20 / 0.88);
+}
+
+.gpt-codex-custom-image-edit:disabled {
+  cursor: progress;
+  opacity: 0.78;
+}
+
+.gpt-codex-custom-image-edit-gallery {
+  position: absolute;
+  z-index: 20;
+  bottom: 10px;
+  left: 10px;
+}
+
+.gpt-codex-custom-generated-image-host:has(
+    > button[data-testid="generated-image-preview"][aria-hidden="true"]
+  )
+  > .gpt-codex-custom-image-edit-gallery {
+  display: none;
+}
+
+.gpt-codex-custom-image-edit-preview {
+  position: absolute;
+  z-index: 100;
+  bottom: 24px;
+  left: 24px;
+}
+
+#gpt-codex-custom-chat-status {
+  position: fixed;
+  z-index: 120;
+  right: 20px;
+  bottom: 20px;
+  max-width: min(360px, calc(100vw - 40px));
+  padding: 10px 14px;
+  border: 1px solid rgb(255 255 255 / 0.13);
+  border-radius: 12px;
+  background: rgb(28 28 28 / 0.94);
+  box-shadow: 0 12px 36px rgb(0 0 0 / 0.3);
+  color: #fff;
+  font: 500 13px/1.35 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  backdrop-filter: blur(14px);
+}
+
+#gpt-codex-custom-chat-status[data-error="true"] {
+  border-color: rgb(255 95 95 / 0.42);
+}
+
+#gpt-codex-custom-chat-status[hidden] {
+  display: none !important;
+}
+
+.gpt-codex-custom-chat-nav-row[data-active="true"],
+.gpt-codex-custom-chat-item[data-active="true"],
+.gpt-codex-custom-chat-sidebar-item[data-active="true"] {
+  background: var(--gpt-codex-custom-chat-active);
+}
+
+.gpt-codex-custom-chat-nav-row:disabled,
+.gpt-codex-custom-chat-account:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
+.gpt-codex-custom-chat-search-panel {
+  flex: 0 0 auto;
+  padding: 0 10px 8px;
+}
+
+.gpt-codex-custom-chat-search,
+.gpt-codex-custom-chat-sidebar-search {
+  width: 100%;
+  height: 36px;
+  padding: 0 11px;
+  border: 1px solid var(--gpt-codex-custom-chat-border);
+  border-radius: 8px;
+  outline: none;
+  background: rgb(0 0 0 / 0.16);
+  color: inherit;
+  font: inherit;
+}
+
+.gpt-codex-custom-chat-search::placeholder,
+.gpt-codex-custom-chat-sidebar-search::placeholder {
+  color: var(--gpt-codex-custom-chat-muted);
+}
+
+.gpt-codex-custom-chat-search:focus,
+.gpt-codex-custom-chat-sidebar-search:focus {
+  border-color: rgb(255 255 255 / 0.26);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+
+.gpt-codex-custom-chat-sidebar-history {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 8px;
+  overscroll-behavior: contain;
+  scrollbar-color: rgb(255 255 255 / 0.18) transparent;
+  scrollbar-width: thin;
+}
+
+.gpt-codex-custom-chat-sidebar-section {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+}
+
+.gpt-codex-custom-chat-section-title,
+.gpt-codex-custom-chat-sidebar-section-title,
+.gpt-codex-custom-chat-sidebar-title {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 14px 10px 6px;
+  color: var(--token-text-secondary, var(--gpt-codex-custom-chat-muted));
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.gpt-codex-custom-chat-list,
+.gpt-codex-custom-chat-sidebar-list {
+  display: grid;
+  gap: 1px;
+}
+
+.gpt-codex-custom-chat-sidebar-item-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  border-radius: 8px;
+}
+
+.gpt-codex-custom-chat-sidebar-item-row:hover,
+.gpt-codex-custom-chat-sidebar-item-row:focus-within,
+.gpt-codex-custom-chat-sidebar-item-row[data-active="true"] {
+  background: var(--token-list-hover-background, var(--gpt-codex-custom-chat-hover));
+}
+
+.gpt-codex-custom-chat-sidebar-item-row[data-active="true"] {
+  background: var(--gpt-codex-custom-chat-active);
+}
+
+.gpt-codex-custom-chat-sidebar-item-row > .gpt-codex-custom-chat-sidebar-item {
+  width: auto;
+  min-width: 0;
+  flex: 1 1 auto;
+  background: transparent !important;
+}
+
+.gpt-codex-custom-chat-conversation-menu-trigger {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  margin-right: 4px;
+  flex: 0 0 28px;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--gpt-codex-custom-chat-muted);
+  cursor: pointer;
+  font: 700 17px/1 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  opacity: 0.52;
+}
+
+.gpt-codex-custom-chat-sidebar-item-row:hover
+  > .gpt-codex-custom-chat-conversation-menu-trigger,
+.gpt-codex-custom-chat-sidebar-item-row:focus-within
+  > .gpt-codex-custom-chat-conversation-menu-trigger,
+.gpt-codex-custom-chat-sidebar-item-row[data-active="true"]
+  > .gpt-codex-custom-chat-conversation-menu-trigger {
+  opacity: 1;
+}
+
+.gpt-codex-custom-chat-conversation-menu-trigger:hover {
+  background: rgb(255 255 255 / 0.09);
+  color: var(--gpt-codex-custom-chat-text);
+}
+
+.gpt-codex-custom-chat-conversation-menu-trigger:disabled {
+  cursor: default;
+  opacity: 0;
+}
+
+.gpt-codex-custom-chat-conversation-menu {
+  position: fixed;
+  z-index: 180;
+  overflow: hidden;
+  padding: 6px;
+  border: 1px solid var(--gpt-codex-custom-chat-border);
+  border-radius: 12px;
+  background: #2b2b2b;
+  box-shadow: 0 14px 40px rgb(0 0 0 / 0.46);
+  color: var(--gpt-codex-custom-chat-text);
+}
+
+.gpt-codex-custom-chat-conversation-menu-item {
+  display: flex;
+  width: 100%;
+  min-height: 38px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #ff6767;
+  cursor: pointer;
+  font: 500 13px/1.25 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-align: left;
+}
+
+.gpt-codex-custom-chat-conversation-menu-item:hover {
+  background: rgb(255 255 255 / 0.08);
+}
+
+.gpt-codex-custom-chat-conversation-menu-item svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+}
+
+.gpt-codex-custom-chat-delete-backdrop {
+  position: fixed;
+  z-index: 220;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(0 0 0 / 0.58);
+  backdrop-filter: blur(2px);
+}
+
+.gpt-codex-custom-chat-delete-dialog {
+  width: min(390px, calc(100vw - 40px));
+  padding: 22px;
+  border: 1px solid rgb(255 255 255 / 0.13);
+  border-radius: 16px;
+  background: #252525;
+  box-shadow: 0 22px 60px rgb(0 0 0 / 0.55);
+  color: var(--gpt-codex-custom-chat-text);
+}
+
+.gpt-codex-custom-chat-delete-dialog h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.gpt-codex-custom-chat-delete-dialog p {
+  margin: 10px 0 0;
+  color: var(--gpt-codex-custom-chat-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.gpt-codex-custom-chat-delete-status:empty {
+  display: none;
+}
+
+.gpt-codex-custom-chat-delete-status[data-error="true"] {
+  color: #ff7a7a !important;
+}
+
+.gpt-codex-custom-chat-delete-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.gpt-codex-custom-chat-delete-cancel,
+.gpt-codex-custom-chat-delete-confirm {
+  min-width: 76px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 9px;
+  cursor: pointer;
+  font: 600 13px/1 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.gpt-codex-custom-chat-delete-cancel {
+  background: transparent;
+  color: var(--gpt-codex-custom-chat-text);
+}
+
+.gpt-codex-custom-chat-delete-confirm {
+  border-color: #e74d4d;
+  background: #e74d4d;
+  color: #fff;
+}
+
+.gpt-codex-custom-chat-delete-cancel:hover {
+  background: rgb(255 255 255 / 0.08);
+}
+
+.gpt-codex-custom-chat-delete-confirm:hover {
+  background: #d94343;
+}
+
+.gpt-codex-custom-chat-delete-cancel:disabled,
+.gpt-codex-custom-chat-delete-confirm:disabled {
+  cursor: progress;
+  opacity: 0.62;
+}
+
+.gpt-codex-custom-chat-item,
+.gpt-codex-custom-chat-sidebar-item {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  overflow: hidden;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.gpt-codex-custom-chat-item-main,
+.gpt-codex-custom-chat-sidebar-item-main,
+.gpt-codex-custom-chat-item-meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gpt-codex-custom-chat-item-main {
+  flex: 1;
+}
+
+.gpt-codex-custom-chat-sidebar-item-main {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gpt-codex-custom-chat-item-meta {
+  flex: 0 0 auto;
+  color: var(--gpt-codex-custom-chat-muted);
+  font-size: 11px;
+}
+
+.gpt-codex-custom-chat-empty,
+.gpt-codex-custom-chat-sidebar-empty {
+  padding: 10px 9px;
+  color: var(--token-text-secondary, var(--gpt-codex-custom-chat-muted));
+  font-size: 13px;
+}
+
+.gpt-codex-custom-chat-load-more {
+  width: calc(100% - 12px);
+  min-height: 34px;
+  margin: 8px 6px 4px;
+  border: 1px solid var(--gpt-codex-custom-chat-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gpt-codex-custom-chat-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
+.gpt-codex-custom-chat-load-more:hover:not(:disabled) {
+  background: var(--gpt-codex-custom-chat-hover);
+  color: var(--gpt-codex-custom-chat-text);
+}
+
+.gpt-codex-custom-chat-load-more:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.gpt-codex-custom-chat-account {
+  display: flex;
+  min-height: 56px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  margin: 0 8px 8px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.gpt-codex-custom-chat-account-avatar {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #444;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  object-fit: cover;
+}
+
+.gpt-codex-custom-chat-account-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.gpt-codex-custom-chat-account-name,
+.gpt-codex-custom-chat-account-plan {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gpt-codex-custom-chat-account-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.gpt-codex-custom-chat-account-plan {
+  margin-top: 1px;
+  color: var(--gpt-codex-custom-chat-muted);
+  font-size: 11px;
+}
+
+.gpt-codex-custom-chat-more-menu,
+[data-gpt-codex-custom-account-menu="true"] {
+  overflow: hidden;
+  padding: 6px;
+  border: 1px solid var(--gpt-codex-custom-chat-border) !important;
+  border-radius: 12px !important;
+  background: #262626 !important;
+  box-shadow: 0 12px 36px rgb(0 0 0 / 0.42) !important;
+  color: var(--gpt-codex-custom-chat-text) !important;
+}
+
+.gpt-codex-custom-chat-more-menu {
+  position: fixed;
+  z-index: 80;
+  bottom: 72px;
+  left: 8px;
+  width: min(244px, calc(100vw - 16px));
+}
+
+[data-gpt-codex-custom-account-menu="true"] {
+  position: fixed !important;
+  z-index: 90 !important;
+  inset: auto auto 68px 8px !important;
+  width: min(248px, calc(100vw - 16px)) !important;
+  max-width: 248px !important;
+  transform: none !important;
+}
+
+:root[data-gpt-codex-custom-mode="chat"]
+  [data-pip-obstacle="quick-chat"]
+  form[data-thread-find-composer="true"] {
+  width: min(768px, calc(100% - 48px));
+  margin-inline: auto;
+}
+
+.gpt-codex-custom-chat-more-item {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  font: inherit;
+}
+
+:root[data-gpt-codex-custom-mode="chat"][data-gpt-codex-custom-aux-view] {
+  min-width: 0;
+  background: var(--gpt-codex-custom-chat-surface);
+  color: var(--gpt-codex-custom-chat-text);
+}
+
+#gpt-codex-custom-chat-sidebar[data-collapsed="true"] {
+  --gpt-codex-custom-chat-rail-current: 64px;
+}
+
+:root[data-gpt-codex-custom-mode="chat"]:has(#gpt-codex-custom-chat-sidebar[data-collapsed="true"]) {
+  --gpt-codex-custom-chat-rail-current: 64px;
+}
+
+#gpt-codex-custom-chat-sidebar[data-collapsed="true"] :is(
+  .gpt-codex-custom-chat-sidebar-brand-title,
+  .gpt-codex-custom-chat-product-menu,
+  .gpt-codex-custom-chat-nav-label,
+  .gpt-codex-custom-chat-search-panel,
+  .gpt-codex-custom-chat-sidebar-section,
+  .gpt-codex-custom-chat-account-copy
+) {
+  display: none;
+}
+
+#gpt-codex-custom-chat-sidebar[data-collapsed="true"] :is(
+  .gpt-codex-custom-chat-sidebar-brand,
+  .gpt-codex-custom-chat-sidebar-nav
+) {
+  padding-inline: 8px;
+}
+
+#gpt-codex-custom-chat-sidebar[data-collapsed="true"] :is(
+  .gpt-codex-custom-chat-nav-row,
+  .gpt-codex-custom-chat-sidebar-new,
+  .gpt-codex-custom-chat-account
+) {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+#gpt-codex-custom-chat-sidebar[data-collapsed="true"] .gpt-codex-custom-chat-account {
+  margin-inline: 8px;
+}
+
+:root[data-gpt-codex-custom="ready"] :is(
+  .gpt-codex-custom-chat-sidebar-collapse,
+  .gpt-codex-custom-chat-sidebar-brand-title,
+  .gpt-codex-custom-chat-product-option,
+  .gpt-codex-custom-image-edit,
+  .gpt-codex-custom-chat-nav-row,
+  .gpt-codex-custom-chat-sidebar-new,
+  .gpt-codex-custom-chat-search,
+  .gpt-codex-custom-chat-sidebar-search,
+  .gpt-codex-custom-chat-item,
+  .gpt-codex-custom-chat-sidebar-item,
+  .gpt-codex-custom-chat-conversation-menu-trigger,
+  .gpt-codex-custom-chat-conversation-menu-item,
+  .gpt-codex-custom-chat-delete-cancel,
+  .gpt-codex-custom-chat-delete-confirm,
+  .gpt-codex-custom-chat-account,
+  .gpt-codex-custom-chat-more-item
+):focus-visible {
+  outline: 2px solid #fff !important;
+  outline-offset: -2px;
+}
+
+@media (max-width: 900px) {
+  :root[data-gpt-codex-custom-mode="chat"] {
+    --gpt-codex-custom-chat-rail-current: 64px;
+  }
+
+  #gpt-codex-custom-chat-sidebar {
+    width: 64px;
+  }
+
+  #gpt-codex-custom-chat-sidebar :is(
+    .gpt-codex-custom-chat-sidebar-brand-title,
+    .gpt-codex-custom-chat-product-menu,
+    .gpt-codex-custom-chat-nav-label,
+    .gpt-codex-custom-chat-search-panel,
+    .gpt-codex-custom-chat-sidebar-section,
+    .gpt-codex-custom-chat-account-copy
+  ) {
+    display: none;
+  }
+
+  #gpt-codex-custom-chat-sidebar :is(
+    .gpt-codex-custom-chat-sidebar-brand,
+    .gpt-codex-custom-chat-sidebar-nav
+  ) {
+    padding-inline: 8px;
+  }
+
+  #gpt-codex-custom-chat-sidebar :is(
+    .gpt-codex-custom-chat-nav-row,
+    .gpt-codex-custom-chat-sidebar-new,
+    .gpt-codex-custom-chat-account
+  ) {
+    justify-content: center;
+    padding-inline: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  :root[data-gpt-codex-custom-mode="chat"] {
+    --gpt-codex-custom-chat-rail-current: 52px;
+  }
+
+  #gpt-codex-custom-chat-sidebar {
+    width: 52px;
+  }
+
+  #gpt-codex-custom-chat-sidebar :is(
+    .gpt-codex-custom-chat-sidebar-brand,
+    .gpt-codex-custom-chat-sidebar-nav
+  ) {
+    padding-inline: 6px;
+  }
+
+  #gpt-codex-custom-chat-sidebar .gpt-codex-custom-chat-sidebar-collapse {
+    width: 32px;
+    margin: 0 auto;
+  }
+
+  #gpt-codex-custom-chat-sidebar .gpt-codex-custom-chat-account {
+    margin-inline: 6px;
+  }
+}
+
+:root[data-gpt-codex-motion="reduced"][data-gpt-codex-custom-mode="chat"]
+  [data-pip-obstacle="quick-chat"],
+:root[data-gpt-codex-motion="reduced"] #gpt-codex-custom-chat-sidebar {
+  transition: none !important;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --gpt-codex-custom-badge-bg: rgb(255 255 255 / 0.9);
+    --gpt-codex-custom-badge-border: rgb(30 24 64 / 0.16);
+    --gpt-codex-custom-badge-text: #241d4f;
+  }
+}
+
+@media (max-width: 640px), print {
+  #gpt-codex-custom-build-badge {
+    display: none;
+  }
+}

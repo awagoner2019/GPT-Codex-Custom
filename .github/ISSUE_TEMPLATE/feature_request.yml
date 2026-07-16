@@ -1,0 +1,32 @@
+name: Feature request
+description: Propose a focused custom UI or tooling improvement.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Describe the missing or awkward behavior, not only the visual treatment.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Explain how it should work in Chat, Work, and Codex where relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: native_bridge
+    attributes:
+      label: Native capability
+      description: If known, identify the shipped desktop action/state this could use. Do not paste extracted upstream code.
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This request does not require publishing OpenAI binaries, extracted source, credentials, or account data.
+          required: true

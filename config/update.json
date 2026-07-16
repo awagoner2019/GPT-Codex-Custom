@@ -1,0 +1,8 @@
+{
+  "enabled": true,
+  "repository": "awagoner2019/GPT-Codex-Custom",
+  "channel": "stable",
+  "checkIntervalHours": 24,
+  "assetName": "gpt-codex-custom-update.zip",
+  "checksumAssetName": "gpt-codex-custom-update.zip.sha256"
+}

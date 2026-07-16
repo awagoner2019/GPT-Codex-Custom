@@ -1,0 +1,45 @@
+{
+  "name": "gpt-codex-custom",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Isolated UI customization layer for a copied GPT/Codex desktop build.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/awagoner2019/GPT-Codex-Custom.git"
+  },
+  "bugs": {
+    "url": "https://github.com/awagoner2019/GPT-Codex-Custom/issues"
+  },
+  "homepage": "https://github.com/awagoner2019/GPT-Codex-Custom#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "setup": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Initialize-Custom.ps1",
+    "build": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Build-Custom.ps1",
+    "launch": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Launch-Custom.ps1",
+    "launch:no-update": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Launch-Custom.ps1 -SkipUpdateCheck",
+    "launch:replace": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Launch-Custom.ps1 -ReplaceExisting",
+    "launch:diagnostics": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Launch-Custom.ps1 -Diagnostics",
+    "launch:diagnostics:replace": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Launch-Custom.ps1 -Diagnostics -ReplaceExisting",
+    "verify": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Verify-Custom.ps1",
+    "verify:interactive": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Verify-Custom-Interactive.ps1",
+    "verify:motion": "node ./scripts/Verify-Model-Picker-Motion.mjs",
+    "verify:token-dock": "node ./scripts/Verify-Token-Hud-Dock.mjs",
+    "capture:screenshot": "node ./scripts/Capture-Custom-Screenshot.mjs",
+    "verify:chat": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Verify-Custom.ps1 -RequireRunning -RequireChatReady",
+    "verify:chat-actions": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Verify-Custom.ps1 -RequireRunning -RequireChatReady -RequireChatActions",
+    "verify:chat-delete": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Verify-Chat-Delete.ps1",
+    "self-test": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Launch-Custom.ps1 -SelfTest",
+    "self-test:replace": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Launch-Custom.ps1 -SelfTest -ReplaceExisting",
+    "upstream:check": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Check-Upstream.ps1 -FailOnDrift",
+    "upstream:sync": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Sync-Upstream.ps1 -Apply",
+    "update:check": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Update-Custom.ps1 -Mode Check",
+    "update:apply": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Update-Custom.ps1 -Mode Apply",
+    "release:package": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/New-UpdatePackage.ps1",
+    "verify:update": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Test-Update-Custom.ps1"
+  },
+  "devDependencies": {
+    "@electron/asar": "3.4.1"
+  }
+}

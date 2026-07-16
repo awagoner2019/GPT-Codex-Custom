@@ -1,0 +1,50 @@
+name: Source checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  updater-and-package:
+    runs-on: windows-latest
+    steps:
+      - name: Check out maintained source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci
+
+      - name: Parse PowerShell scripts
+        shell: powershell
+        run: |
+          $failed = $false
+          Get-ChildItem -LiteralPath scripts -Filter *.ps1 -File | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $_.FullName,
+              [ref]$tokens,
+              [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) {
+              $failed = $true
+              $errors | ForEach-Object { Write-Error "$($_.Extent.File):$($_.Extent.StartLineNumber): $($_.Message)" }
+            }
+          }
+          if ($failed) { throw "PowerShell parse checks failed." }
+
+      - name: Verify updater and public package boundary
+        run: npm run verify:update

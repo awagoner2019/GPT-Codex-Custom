@@ -1,0 +1,35 @@
+# OpenAI package snapshots, extracted upstream code, and generated runtimes.
+# These files are intentionally never published by this repository.
+vendor/
+work/
+
+# Isolated account/session state and logs.
+profile/
+logs/
+
+# Local updater state, release artifacts, and dependencies.
+updates/
+dist/
+node_modules/
+npm-debug.log*
+
+# Workspace-local agent context is useful on the maintainer's machine but
+# contains unrelated project routing information.
+.mex/
+
+# Optional local configuration and secrets.
+config/update.local.json
+.env
+.env.*
+!.env.example
+*.pem
+*.pfx
+*.key
+
+# Common editor and operating-system noise.
+.vs/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini

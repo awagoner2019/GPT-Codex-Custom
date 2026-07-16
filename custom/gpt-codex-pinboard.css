@@ -1,0 +1,731 @@
+/*
+ * Local message pinboard UI for the isolated GPT/Codex renderer.
+ * This file styles only gpt-codex-pinboard classes and stable data attributes.
+ */
+
+:root {
+  --gpt-codex-pinboard-accent: var(--gpt-codex-custom-accent, #8b7cff);
+  --gpt-codex-pinboard-accent-strong: var(
+    --gpt-codex-custom-accent-strong,
+    #6f5cff
+  );
+  --gpt-codex-pinboard-bg: var(
+    --token-main-surface-primary,
+    var(--color-token-bg-primary, #202020)
+  );
+  --gpt-codex-pinboard-bg-raised: var(
+    --token-main-surface-secondary,
+    var(--color-token-bg-secondary, #292929)
+  );
+  --gpt-codex-pinboard-bg-hover: var(
+    --token-list-hover-background,
+    rgb(255 255 255 / 0.075)
+  );
+  --gpt-codex-pinboard-border: var(
+    --token-border-default,
+    rgb(255 255 255 / 0.12)
+  );
+  --gpt-codex-pinboard-border-strong: var(
+    --token-border-heavy,
+    rgb(255 255 255 / 0.2)
+  );
+  --gpt-codex-pinboard-text: var(
+    --token-text-primary,
+    var(--color-token-text-primary, #f1f1f1)
+  );
+  --gpt-codex-pinboard-muted: var(
+    --token-text-secondary,
+    var(--color-token-text-secondary, #aaa)
+  );
+  --gpt-codex-pinboard-danger: #ff6969;
+  --gpt-codex-pinboard-success: #69d59d;
+  --gpt-codex-pinboard-shadow: 0 22px 70px rgb(0 0 0 / 0.48);
+  --gpt-codex-pinboard-font: ui-sans-serif, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+}
+
+[data-gpt-codex-pinboard-control="bookmark"] {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  align-items: center;
+  justify-content: center;
+  margin: 4px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gpt-codex-pinboard-muted);
+  cursor: pointer;
+  font-family: var(--gpt-codex-pinboard-font);
+  line-height: 1;
+  opacity: 0.72;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease,
+    color 120ms ease,
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+[data-gpt-codex-pinboard-message="registered"]:hover
+  [data-gpt-codex-pinboard-control="bookmark"],
+[data-gpt-codex-pinboard-control="bookmark"]:focus-visible,
+[data-gpt-codex-pinboard-control="bookmark"][data-gpt-codex-pinboard-state="bookmarked"] {
+  opacity: 1;
+}
+
+[data-gpt-codex-pinboard-control="bookmark"]:hover:not(:disabled) {
+  border-color: var(--gpt-codex-pinboard-border);
+  background: var(--gpt-codex-pinboard-bg-hover);
+  color: var(--gpt-codex-pinboard-text);
+  transform: translateY(-1px);
+}
+
+[data-gpt-codex-pinboard-control="bookmark"][data-gpt-codex-pinboard-state="bookmarked"] {
+  border-color: color-mix(
+    in srgb,
+    var(--gpt-codex-pinboard-accent) 42%,
+    transparent
+  );
+  background: color-mix(
+    in srgb,
+    var(--gpt-codex-pinboard-accent) 14%,
+    transparent
+  );
+  color: color-mix(
+    in srgb,
+    var(--gpt-codex-pinboard-accent) 72%,
+    white
+  );
+}
+
+[data-gpt-codex-pinboard-control="bookmark"][data-gpt-codex-pinboard-state="pending"]
+  .gpt-codex-pinboard-bookmark-icon {
+  animation: gpt-codex-pinboard-pulse 900ms ease-in-out infinite alternate;
+}
+
+[data-gpt-codex-pinboard-control="bookmark"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+  transform: none;
+}
+
+[data-gpt-codex-pinboard-control="bookmark"][data-gpt-codex-pinboard-state="incomplete"] {
+  border-style: dashed;
+}
+
+.gpt-codex-pinboard-bookmark-icon {
+  display: block;
+  font-size: 17px;
+  line-height: 1;
+  transform: translateY(-0.5px);
+}
+
+.gpt-codex-pinboard-launcher {
+  position: fixed;
+  z-index: 2147483500;
+  right: 14px;
+  bottom: 76px;
+  display: inline-flex;
+  min-width: 108px;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid var(--gpt-codex-pinboard-border-strong);
+  border-radius: 999px;
+  background: color-mix(
+    in srgb,
+    var(--gpt-codex-pinboard-bg-raised) 92%,
+    transparent
+  );
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.32);
+  color: var(--gpt-codex-pinboard-text);
+  cursor: pointer;
+  font: 600 12px/1 var(--gpt-codex-pinboard-font);
+  letter-spacing: 0.01em;
+  backdrop-filter: blur(16px) saturate(130%);
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    filter 140ms ease,
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+:root[data-gpt-codex-pinboard-drawer="open"] #gpt-codex-custom-build-badge {
+  display: none !important;
+}
+
+.gpt-codex-pinboard-launcher[data-gpt-codex-pinboard-count="0"] {
+  width: 38px;
+  min-width: 38px;
+  gap: 0;
+  padding-inline: 0;
+  border-color: color-mix(
+    in srgb,
+    var(--gpt-codex-pinboard-border) 72%,
+    transparent
+  );
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.22);
+  opacity: 0.78;
+}
+
+.gpt-codex-pinboard-launcher[data-gpt-codex-pinboard-count="0"]
+  :is(.gpt-codex-pinboard-launcher-label, .gpt-codex-pinboard-launcher-count) {
+  display: none;
+}
+
+.gpt-codex-pinboard-launcher:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--gpt-codex-pinboard-accent) 54%,
+    var(--gpt-codex-pinboard-border)
+  );
+  background: var(--gpt-codex-pinboard-bg-raised);
+  transform: translateY(-1px);
+}
+
+.gpt-codex-pinboard-launcher[data-gpt-codex-pinboard-count="0"]:hover {
+  opacity: 1;
+}
+
+:root[data-gpt-codex-model-picker-open="true"] .gpt-codex-pinboard-launcher,
+:root[data-gpt-codex-model-picker-open="true"] .gpt-codex-pinboard-launcher:hover {
+  filter: saturate(0.45);
+  opacity: 0.28;
+  pointer-events: none;
+  transform: translateY(0) scale(0.96);
+}
+
+.gpt-codex-pinboard-launcher-icon {
+  color: var(--gpt-codex-pinboard-accent);
+  font-size: 15px;
+}
+
+.gpt-codex-pinboard-launcher-count {
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  padding-inline: 5px;
+  border-radius: 999px;
+  background: color-mix(
+    in srgb,
+    var(--gpt-codex-pinboard-accent) 19%,
+    transparent
+  );
+  color: color-mix(
+    in srgb,
+    var(--gpt-codex-pinboard-accent) 70%,
+    white
+  );
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gpt-codex-pinboard-backdrop {
+  position: fixed;
+  z-index: 2147483590;
+  inset: 0;
+  background: rgb(0 0 0 / 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.gpt-codex-pinboard-drawer {
+  position: fixed;
+  z-index: 2147483600;
+  inset: 0 0 0 auto;
+  display: grid;
+  width: min(440px, calc(100vw - 36px));
+  min-width: 320px;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border-left: 1px solid var(--gpt-codex-pinboard-border-strong);
+  background: var(--gpt-codex-pinboard-bg);
+  box-shadow: var(--gpt-codex-pinboard-shadow);
+  color: var(--gpt-codex-pinboard-text);
+  font-family: var(--gpt-codex-pinboard-font);
+}
+
+.gpt-codex-pinboard-backdrop[hidden],
+.gpt-codex-pinboard-drawer[hidden] {
+  display: none !important;
+}
+
+.gpt-codex-pinboard-header {
+  display: flex;
+  min-height: 78px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--gpt-codex-pinboard-border);
+}
+
+.gpt-codex-pinboard-heading-wrap {
+  min-width: 0;
+}
+
+.gpt-codex-pinboard-title {
+  margin: 0;
+  color: var(--gpt-codex-pinboard-text);
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.gpt-codex-pinboard-summary {
+  margin: 5px 0 0;
+  overflow: hidden;
+  color: var(--gpt-codex-pinboard-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gpt-codex-pinboard-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--gpt-codex-pinboard-border);
+}
+
+.gpt-codex-pinboard-filter {
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  overflow: hidden;
+  background: transparent;
+  color: var(--gpt-codex-pinboard-muted);
+  cursor: pointer;
+  font: 600 11px/1.2 var(--gpt-codex-pinboard-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gpt-codex-pinboard-filter:hover {
+  background: var(--gpt-codex-pinboard-bg-hover);
+  color: var(--gpt-codex-pinboard-text);
+}
+
+.gpt-codex-pinboard-filter[data-gpt-codex-pinboard-selected="true"] {
+  border-color: color-mix(
+    in srgb,
+    var(--gpt-codex-pinboard-accent) 36%,
+    transparent
+  );
+  background: color-mix(
+    in srgb,
+    var(--gpt-codex-pinboard-accent) 15%,
+    transparent
+  );
+  color: var(--gpt-codex-pinboard-text);
+}
+
+.gpt-codex-pinboard-list {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 10px;
+  overflow: auto;
+  padding: 14px;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.gpt-codex-pinboard-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid var(--gpt-codex-pinboard-border);
+  border-radius: 13px;
+  background: var(--gpt-codex-pinboard-bg-raised);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.025) inset;
+}
+
+.gpt-codex-pinboard-item:hover {
+  border-color: var(--gpt-codex-pinboard-border-strong);
+}
+
+.gpt-codex-pinboard-item-meta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+}
+
+.gpt-codex-pinboard-mode,
+.gpt-codex-pinboard-role {
+  display: inline-flex;
+  min-height: 21px;
+  align-items: center;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.gpt-codex-pinboard-mode {
+  border: 1px solid color-mix(in srgb, currentColor 26%, transparent);
+}
+
+[data-gpt-codex-pinboard-mode-badge="chat"] {
+  background: rgb(67 184 131 / 0.13);
+  color: #72d8aa;
+}
+
+[data-gpt-codex-pinboard-mode-badge="work"] {
+  background: rgb(83 151 255 / 0.14);
+  color: #8cbaff;
+}
+
+[data-gpt-codex-pinboard-mode-badge="codex"] {
+  background: color-mix(
+    in srgb,
+    var(--gpt-codex-pinboard-accent) 16%,
+    transparent
+  );
+  color: color-mix(
+    in srgb,
+    var(--gpt-codex-pinboard-accent) 72%,
+    white
+  );
+}
+
+.gpt-codex-pinboard-role {
+  padding-inline: 2px;
+  color: var(--gpt-codex-pinboard-muted);
+  font-weight: 600;
+}
+
+.gpt-codex-pinboard-time {
+  min-width: 0;
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--gpt-codex-pinboard-muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gpt-codex-pinboard-item-label {
+  margin: -1px 0 0;
+  overflow: hidden;
+  color: var(--gpt-codex-pinboard-text);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gpt-codex-pinboard-excerpt {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--gpt-codex-pinboard-text);
+  font-size: 13px;
+  line-height: 1.48;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+}
+
+.gpt-codex-pinboard-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.gpt-codex-pinboard-action {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid var(--gpt-codex-pinboard-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gpt-codex-pinboard-text);
+  cursor: pointer;
+  font: 600 11px/1.1 var(--gpt-codex-pinboard-font);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.gpt-codex-pinboard-action:hover:not(:disabled) {
+  border-color: var(--gpt-codex-pinboard-border-strong);
+  background: var(--gpt-codex-pinboard-bg-hover);
+}
+
+.gpt-codex-pinboard-action:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
+
+.gpt-codex-pinboard-action[data-gpt-codex-pinboard-variant="danger"] {
+  border-color: color-mix(
+    in srgb,
+    var(--gpt-codex-pinboard-danger) 46%,
+    transparent
+  );
+  background: color-mix(
+    in srgb,
+    var(--gpt-codex-pinboard-danger) 16%,
+    transparent
+  );
+  color: var(--gpt-codex-pinboard-danger);
+}
+
+.gpt-codex-pinboard-action[data-gpt-codex-pinboard-variant="quiet-danger"] {
+  margin-left: auto;
+  border-color: transparent;
+  color: color-mix(
+    in srgb,
+    var(--gpt-codex-pinboard-danger) 82%,
+    var(--gpt-codex-pinboard-muted)
+  );
+}
+
+.gpt-codex-pinboard-close {
+  width: 34px;
+  min-width: 34px;
+  padding: 0;
+  font-size: 0;
+}
+
+.gpt-codex-pinboard-close::before,
+.gpt-codex-pinboard-close::after {
+  position: absolute;
+  width: 14px;
+  height: 1.5px;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
+}
+
+.gpt-codex-pinboard-close {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+}
+
+.gpt-codex-pinboard-close::before {
+  transform: rotate(45deg);
+}
+
+.gpt-codex-pinboard-close::after {
+  transform: rotate(-45deg);
+}
+
+.gpt-codex-pinboard-confirmation {
+  display: grid;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid color-mix(
+    in srgb,
+    var(--gpt-codex-pinboard-danger) 38%,
+    transparent
+  );
+  border-radius: 10px;
+  background: color-mix(
+    in srgb,
+    var(--gpt-codex-pinboard-danger) 9%,
+    transparent
+  );
+}
+
+.gpt-codex-pinboard-confirmation-text {
+  margin: 0;
+  color: var(--gpt-codex-pinboard-text);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.gpt-codex-pinboard-empty {
+  display: grid;
+  min-height: 220px;
+  place-content: center;
+  gap: 7px;
+  padding: 28px;
+  border: 1px dashed var(--gpt-codex-pinboard-border);
+  border-radius: 14px;
+  color: var(--gpt-codex-pinboard-muted);
+  text-align: center;
+}
+
+.gpt-codex-pinboard-empty::before {
+  color: var(--gpt-codex-pinboard-accent);
+  content: "☆";
+  font-size: 28px;
+  line-height: 1;
+}
+
+.gpt-codex-pinboard-empty[data-gpt-codex-pinboard-empty="loading"]::before {
+  animation: gpt-codex-pinboard-pulse 900ms ease-in-out infinite alternate;
+}
+
+.gpt-codex-pinboard-empty[data-gpt-codex-pinboard-empty="error"]::before {
+  color: var(--gpt-codex-pinboard-danger);
+  content: "!";
+}
+
+.gpt-codex-pinboard-empty-title {
+  margin: 4px 0 0;
+  color: var(--gpt-codex-pinboard-text);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.gpt-codex-pinboard-empty-detail {
+  max-width: 280px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.gpt-codex-pinboard-status {
+  min-height: 32px;
+  margin: 0;
+  padding: 8px 14px 10px;
+  border-top: 1px solid var(--gpt-codex-pinboard-border);
+  color: var(--gpt-codex-pinboard-muted);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.gpt-codex-pinboard-status:empty {
+  min-height: 0;
+  padding-block: 0;
+  border-top-color: transparent;
+}
+
+.gpt-codex-pinboard-status[data-gpt-codex-pinboard-status="success"] {
+  color: var(--gpt-codex-pinboard-success);
+}
+
+.gpt-codex-pinboard-status[data-gpt-codex-pinboard-status="error"] {
+  color: var(--gpt-codex-pinboard-danger);
+}
+
+:is(
+  [data-gpt-codex-pinboard-control="bookmark"],
+  .gpt-codex-pinboard-launcher,
+  .gpt-codex-pinboard-filter,
+  .gpt-codex-pinboard-action,
+  .gpt-codex-pinboard-empty-title
+):focus-visible {
+  outline: 2px solid var(--gpt-codex-pinboard-accent);
+  outline-offset: 2px;
+}
+
+@keyframes gpt-codex-pinboard-pulse {
+  from {
+    opacity: 0.42;
+    transform: scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 640px) {
+  .gpt-codex-pinboard-launcher {
+    right: 10px;
+    bottom: 48px;
+    min-width: 42px;
+    padding-inline: 10px;
+  }
+
+  .gpt-codex-pinboard-launcher[data-gpt-codex-pinboard-count="0"] {
+    width: 38px;
+    min-width: 38px;
+    padding-inline: 0;
+  }
+
+  .gpt-codex-pinboard-launcher-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .gpt-codex-pinboard-drawer {
+    width: 100vw;
+    min-width: 0;
+    border-left: 0;
+  }
+
+  .gpt-codex-pinboard-header {
+    padding-inline: 14px;
+  }
+
+  .gpt-codex-pinboard-filters {
+    gap: 3px;
+    padding-inline: 10px;
+  }
+
+  .gpt-codex-pinboard-filter {
+    padding-inline: 4px;
+    font-size: 10px;
+  }
+
+  .gpt-codex-pinboard-list {
+    padding: 10px;
+  }
+}
+
+:root[data-gpt-codex-motion="reduced"]
+  [data-gpt-codex-pinboard-control="bookmark"],
+:root[data-gpt-codex-motion="reduced"] .gpt-codex-pinboard-launcher,
+:root[data-gpt-codex-motion="reduced"] .gpt-codex-pinboard-filter,
+:root[data-gpt-codex-motion="reduced"] .gpt-codex-pinboard-action {
+  transition: none;
+}
+
+:root[data-gpt-codex-motion="reduced"]
+  [data-gpt-codex-pinboard-control="bookmark"][data-gpt-codex-pinboard-state="pending"]
+  .gpt-codex-pinboard-bookmark-icon,
+:root[data-gpt-codex-motion="reduced"]
+  .gpt-codex-pinboard-empty[data-gpt-codex-pinboard-empty="loading"]::before {
+  animation: none;
+}
+
+@media (forced-colors: active) {
+  [data-gpt-codex-pinboard-control="bookmark"],
+  .gpt-codex-pinboard-launcher,
+  .gpt-codex-pinboard-drawer,
+  .gpt-codex-pinboard-filter,
+  .gpt-codex-pinboard-item,
+  .gpt-codex-pinboard-action,
+  .gpt-codex-pinboard-confirmation {
+    border-color: CanvasText;
+    forced-color-adjust: auto;
+  }
+
+  .gpt-codex-pinboard-backdrop {
+    background: rgb(0 0 0 / 0.75);
+  }
+}
