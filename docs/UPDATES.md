@@ -50,13 +50,21 @@ generated state is never part of the archive or rollback set.
 The machine-specific `upstream.json` is also preserved; upstream compatibility
 changes are handled only by the separate upstream-sync path.
 
+The update archive carries the maintained launcher C# source, manifest, build
+script, and tests under `scripts/`; it does not carry the generated
+`GPT-Codex-Custom.exe`. `npm run build` recompiles the local EXE after source is
+applied. The GUI wrapper waits for the short-lived launcher parent to exit before
+the update runs, so Windows does not hold the old executable open during
+replacement.
+
 ## Owner release procedure
 
 Only the repository owner should perform these steps:
 
 1. Finish and verify the source change.
 2. Set a new semantic version in `package.json` and `package-lock.json`.
-3. Run `npm run verify:update`, `npm run build`, and `npm run verify`.
+3. Run `npm run verify:update`, `npm run build`, `npm run verify:launcher`, and
+   `npm run verify`.
 4. For UI changes, run `npm run verify:ui-suite` and confirm it restores a
    normal launch without a diagnostics argument.
 5. Regenerate the committed source manifest with

@@ -22,9 +22,15 @@ echo.
 
 if exist "work\runtime\ChatGPT.exe" (
     echo This copy is already initialized.
+    if not exist "GPT-Codex-Custom.exe" (
+        echo Building the native Windows launcher...
+        call npm run build:launcher
+        if errorlevel 1 goto :failure
+    )
+    powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\Install-LauncherShortcut.ps1"
     choice /C YN /N /M "Launch it now? [Y/N] "
     if errorlevel 2 exit /b 0
-    call npm run launch
+    start "" ".\GPT-Codex-Custom.exe"
     if errorlevel 1 goto :failure
     exit /b 0
 )
@@ -44,7 +50,7 @@ echo.
 echo Setup and verification completed successfully.
 choice /C YN /N /M "Launch GPT + Codex Custom now? [Y/N] "
 if errorlevel 2 exit /b 0
-call npm run launch
+start "" ".\GPT-Codex-Custom.exe"
 if errorlevel 1 goto :failure
 exit /b 0
 
@@ -59,6 +65,10 @@ if not exist "scripts\Initialize-Custom.ps1" (
 )
 if not exist "scripts\Ensure-OfficialPackage.ps1" (
     echo ERROR: official installer verification is missing. Extract the complete release before running setup.
+    exit /b 1
+)
+if not exist "scripts\Build-Launcher.ps1" (
+    echo ERROR: native launcher build script is missing. Extract the complete release before running setup.
     exit /b 1
 )
 where node.exe >nul 2>&1
@@ -79,6 +89,11 @@ if not defined NODE_MAJOR (
 )
 if !NODE_MAJOR! LSS 20 (
     echo ERROR: Node.js 20 or newer is required. Found major version !NODE_MAJOR!.
+    exit /b 1
+)
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\Build-Launcher.ps1" -CheckOnly
+if errorlevel 1 (
+    echo ERROR: The native Windows launcher prerequisites are unavailable.
     exit /b 1
 )
 exit /b 0

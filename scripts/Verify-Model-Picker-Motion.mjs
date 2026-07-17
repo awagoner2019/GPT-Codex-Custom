@@ -380,6 +380,8 @@ async function readState() {
     const trigger = document.getElementById(${JSON.stringify(triggerId)});
     const panel = document.getElementById(${JSON.stringify(panelId)});
     const probe = globalThis.GPT_CODEX_CUSTOM_MODEL_PICKER_PROBE?.() ?? null;
+    const triggerLabel = trigger?.querySelector('.gpt-codex-model-picker__trigger-label');
+    const triggerLightning = trigger?.querySelector('.gpt-codex-model-picker__lightning');
     const rect = (element) => {
       if (!(element instanceof Element)) return null;
       const value = element.getBoundingClientRect();
@@ -410,6 +412,7 @@ async function readState() {
     const ultraBlock = panel?.querySelector('.gpt-codex-model-picker__ultra');
     const particles = [...(ultraBlock?.querySelectorAll('.gpt-codex-model-picker__particle') ?? [])];
     const fastToggle = panel?.querySelector('.gpt-codex-model-picker__fast-toggle');
+    const fastIcon = panel?.querySelector('.gpt-codex-model-picker__fast-icon');
     const supportedCells = [...(panel?.querySelectorAll(
       '.gpt-codex-model-picker__cell[data-supported="true"]',
     ) ?? [])];
@@ -455,6 +458,9 @@ async function readState() {
         tabIndex: control.tabIndex,
       })),
       columnCount: Array.isArray(probe?.columnLabels) ? probe.columnLabels.length : 0,
+      catalogBackedChoiceCount: probe?.catalogBackedChoiceCount ?? null,
+      catalogChoiceCount: probe?.catalogChoiceCount ?? null,
+      catalogIntegrity: probe?.catalogIntegrity === true,
       customReplacementActionable: probe?.customReplacementActionable === true,
       customTriggerVisibleCount: probe?.customTriggerVisibleCount ?? null,
       headerOpacity: Number(headerStyle?.opacity ?? 0),
@@ -464,6 +470,8 @@ async function readState() {
       fastEffect: fastToggle?.dataset.fastEffect ?? null,
       fastEffective: probe?.fastEffective === true,
       fastEnabled: probe?.fastEnabled === true,
+      fastIconColor: style(fastIcon)?.color ?? null,
+      fastIconUltraPurple: probe?.fastIconUltraPurple === true,
       fastPending: probe?.fastPending === true,
       fastRect: rect(fastToggle),
       fastSupported: probe?.fastSupported === true,
@@ -520,15 +528,26 @@ async function readState() {
       },
       selectedChoiceKey: selectedCell?.dataset.choiceKey ?? null,
       selectedColumn: probe?.selectedColumn ?? null,
+      selectedExactMatch: probe?.selectedExactMatch === true,
       selectedRowVisual: {
         backgroundColor: selectedRowStyle?.backgroundColor ?? null,
         backgroundImage: selectedRowStyle?.backgroundImage ?? null,
         borderColor: selectedRowStyle?.borderTopColor ?? null,
       },
       settling: rowCells?.dataset.settling === 'true',
+      syntheticCombinationCount: probe?.syntheticCombinationCount ?? null,
       trackHeight: trackRect?.height ?? null,
       trackTransitionDuration: trackStyle?.transitionDuration ?? null,
       trackWidth: trackRect?.width ?? null,
+      expectedTriggerLabel: probe?.expectedTriggerLabel ?? null,
+      triggerLabelClientWidth: triggerLabel?.clientWidth ?? null,
+      triggerLabelFullyVisible: probe?.triggerLabelFullyVisible === true,
+      triggerLabelOverflow: style(triggerLabel)?.overflow ?? null,
+      triggerLabelScrollWidth: triggerLabel?.scrollWidth ?? null,
+      triggerLabelText: probe?.triggerLabelText ?? triggerLabel?.textContent?.trim() ?? null,
+      triggerLabelTextOverflow: style(triggerLabel)?.textOverflow ?? null,
+      triggerLightningColor: style(triggerLightning)?.color ?? null,
+      triggerLightningUltraPurple: probe?.triggerLightningUltraPurple === true,
       triggerRect: rect(trigger),
       ultraAvailable: probe?.ultraAvailable === true,
       ultraCapableRowIds: probe?.ultraCapableRowIds ?? [],
@@ -553,6 +572,12 @@ async function readState() {
         probe?.unrelatedSuppressedNativeTriggerCount ?? null,
     };
   })()`);
+}
+
+async function readCatalogState() {
+  return evaluate(
+    "globalThis.GPT_CODEX_CUSTOM_MODEL_PICKER_CATALOG_PROBE?.() ?? null",
+  );
 }
 
 async function focusControl(controlIdentity) {
@@ -1007,6 +1032,55 @@ try {
   await delay(120);
   await ensurePanel(false);
   const chatReady = await readState();
+  const chatCatalog = await readCatalogState();
+  const modelPickerSelfTest = await evaluate(
+    "globalThis.GPT_CODEX_CUSTOM_MODEL_PICKER_SELF_TEST?.() ?? null",
+  );
+  check(
+    "chat.mixedVersionCatalogCannotManufactureModelEffortPairs",
+    modelPickerSelfTest?.passed === true &&
+      modelPickerSelfTest?.exactCatalogRows === true &&
+      modelPickerSelfTest?.noSyntheticInstant === true &&
+      modelPickerSelfTest?.unknownEffortFailsClosed === true,
+    modelPickerSelfTest,
+  );
+  const chatCombinations = Array.isArray(chatCatalog?.displayedCombinations)
+    ? chatCatalog.displayedCombinations
+    : [];
+  const mislabeledFiveFiveInstant = chatCombinations.filter(
+    (choice) =>
+      String(choice?.label ?? "").trim().toLowerCase() === "5.5 instant" &&
+      String(choice?.model ?? "").trim().toLowerCase() !== "gpt-5.5",
+  );
+  const duplicateChatCombinations = chatCombinations.filter((choice, index, choices) => {
+    const key = [choice?.model, choice?.slug, choice?.thinkingEffort ?? ""].join("\u0000");
+    return (
+      choices.findIndex(
+        (candidate) =>
+          [candidate?.model, candidate?.slug, candidate?.thinkingEffort ?? ""].join("\u0000") ===
+          key,
+      ) !== index
+    );
+  });
+  check(
+    "chat.liveMatrixContainsOnlyExactAccountCombinations",
+    chatReady.queryState === "ready" &&
+      chatReady.catalogIntegrity === true &&
+      chatReady.catalogChoiceCount === chatReady.catalogBackedChoiceCount &&
+      chatReady.catalogChoiceCount === chatCombinations.length &&
+      chatCatalog?.selectedExactMatch === true &&
+      chatReady.syntheticCombinationCount === 0 &&
+      mislabeledFiveFiveInstant.length === 0 &&
+      duplicateChatCombinations.length === 0,
+    {
+      catalogBackedChoiceCount: chatReady.catalogBackedChoiceCount,
+      catalogChoiceCount: chatReady.catalogChoiceCount,
+      combinations: chatCombinations,
+      mislabeledFiveFiveInstant,
+      selectedExactMatch: chatCatalog?.selectedExactMatch,
+      syntheticCombinationCount: chatReady.syntheticCombinationCount,
+    },
+  );
   const chatNativeDiagnostics = Array.isArray(chatReady.nativeTriggerDiagnostics)
     ? chatReady.nativeTriggerDiagnostics
     : [];
@@ -1093,6 +1167,8 @@ try {
   );
   const chatToWork = await sampleProductTransition("work");
   checkProductTransition("transition.chatToWorkHasNoDuplicateOrMissingControl", chatToWork);
+  const workReady = await readState();
+  const workCatalog = await readCatalogState();
   const workToCodex = await sampleProductTransition("codex");
   checkProductTransition("transition.workToCodexHasNoDuplicateOrMissingControl", workToCodex);
   await delay(300);
@@ -1100,6 +1176,52 @@ try {
   if (ready.queryState !== "ready" || !ready.triggerRect) {
     throw new Error("The account-backed model picker is not ready.");
   }
+  const codexCatalog = await readCatalogState();
+  const exactNativeCatalog = (state, catalog) => {
+    const combinations = Array.isArray(catalog?.displayedCombinations)
+      ? catalog.displayedCombinations
+      : [];
+    const keys = combinations.map((choice) =>
+      [choice?.model, choice?.slug, choice?.thinkingEffort ?? ""].join("\u0000"),
+    );
+    return (
+      state?.queryState === "ready" &&
+      state?.catalogIntegrity === true &&
+      state?.catalogChoiceCount > 0 &&
+      state.catalogChoiceCount === state.catalogBackedChoiceCount &&
+      state.catalogChoiceCount === combinations.length &&
+      catalog?.selectedExactMatch === true &&
+      state.syntheticCombinationCount === 0 &&
+      new Set(keys).size === keys.length &&
+      combinations.every(
+        (choice) =>
+          String(choice?.model ?? "").trim() === String(choice?.modelLabel ?? "").trim(),
+      )
+    );
+  };
+  check(
+    "native.workAndCodexMatricesContainOnlySupportedSnapshotCombinations",
+    workReady.activeMode === "work" &&
+      exactNativeCatalog(workReady, workCatalog) &&
+      ready.activeMode === "codex" &&
+      exactNativeCatalog(ready, codexCatalog),
+    {
+      codex: {
+        catalogBackedChoiceCount: ready.catalogBackedChoiceCount,
+        catalogChoiceCount: ready.catalogChoiceCount,
+        combinations: codexCatalog?.displayedCombinations,
+        selectedExactMatch: codexCatalog?.selectedExactMatch,
+        syntheticCombinationCount: ready.syntheticCombinationCount,
+      },
+      work: {
+        catalogBackedChoiceCount: workReady.catalogBackedChoiceCount,
+        catalogChoiceCount: workReady.catalogChoiceCount,
+        combinations: workCatalog?.displayedCombinations,
+        selectedExactMatch: workCatalog?.selectedExactMatch,
+        syntheticCombinationCount: workReady.syntheticCombinationCount,
+      },
+    },
+  );
   check(
     "native.onlyCustomPickerVisible",
     ready.visibleNativeTriggerCount === 0 &&
@@ -1121,6 +1243,31 @@ try {
       visibleAllNativeTriggerCount: ready.visibleAllNativeTriggerCount,
       visibleNativeTriggerCount: ready.visibleNativeTriggerCount,
       visibleOtherNativeTriggerCount: ready.visibleOtherNativeTriggerCount,
+    },
+  );
+  check(
+    "trigger.fullModelAndEffortRemainVisible",
+    chatReady.triggerLabelFullyVisible &&
+      chatReady.triggerLabelText === chatReady.expectedTriggerLabel &&
+      ready.triggerLabelFullyVisible &&
+      ready.triggerLabelText === ready.expectedTriggerLabel,
+    {
+      chat: {
+        clientWidth: chatReady.triggerLabelClientWidth,
+        expected: chatReady.expectedTriggerLabel,
+        overflow: chatReady.triggerLabelOverflow,
+        scrollWidth: chatReady.triggerLabelScrollWidth,
+        text: chatReady.triggerLabelText,
+        textOverflow: chatReady.triggerLabelTextOverflow,
+      },
+      native: {
+        clientWidth: ready.triggerLabelClientWidth,
+        expected: ready.expectedTriggerLabel,
+        overflow: ready.triggerLabelOverflow,
+        scrollWidth: ready.triggerLabelScrollWidth,
+        text: ready.triggerLabelText,
+        textOverflow: ready.triggerLabelTextOverflow,
+      },
     },
   );
   const fallbackContract = await inspectUnconfirmedNativeFallback();
@@ -1272,13 +1419,20 @@ try {
   openingSamples.push({ at: 0, ...(await readState()) });
   await delay(45);
   openingSamples.push({ at: 45, ...(await readState()) });
-  await delay(90);
+  await delay(45);
+  openingSamples.push({ at: 90, ...(await readState()) });
+  await delay(45);
   openingSamples.push({ at: 135, ...(await readState()) });
   await delay(230);
   openingSamples.push({ at: 365, ...(await readState()) });
   const openingSettled = openingSamples.at(-1);
-  const openingHasInBetweenFrame = openingSamples.some(
-    (sample) => !sample.panelHidden && sample.panelOpacity > 0.02 && sample.panelOpacity < 0.98,
+  const openingStart = openingSamples[0];
+  const openingHasInBetweenFrame = openingSamples.slice(1, -1).some(
+    (sample) =>
+      !sample.panelHidden &&
+      ((sample.panelOpacity > 0.02 && sample.panelOpacity < 0.98) ||
+        (sample.panelTransform !== openingStart.panelTransform &&
+          sample.panelTransform !== openingSettled.panelTransform)),
   );
   check(
     "panel.openFluidly",
@@ -1949,6 +2103,7 @@ try {
   const particleVisualSignatures = new Set(
     particleSamples.map((sample) => JSON.stringify(sample.visuals)),
   );
+  const ultraColorSettledState = await readState();
   check(
     "ultra.particlesMoveWhileNativeUltraIsSelected",
     ultraActiveState.ultraEngaged &&
@@ -1960,6 +2115,19 @@ try {
       particleCount: ultraActiveState.ultraParticleCount,
       samples: particleSamples,
       uniqueVisualStateCount: particleVisualSignatures.size,
+    },
+  );
+  check(
+    "ultra.lightningIconsTurnPurple",
+    ultraColorSettledState.ultraEngaged &&
+      ultraColorSettledState.triggerLightningUltraPurple &&
+      ultraColorSettledState.fastIconUltraPurple,
+    {
+      initialFastIconColor: ultraActiveState.fastIconColor,
+      initialTriggerLightningColor: ultraActiveState.triggerLightningColor,
+      settledFastIconColor: ultraColorSettledState.fastIconColor,
+      settledTriggerLightningColor: ultraColorSettledState.triggerLightningColor,
+      ultraEngaged: ultraColorSettledState.ultraEngaged,
     },
   );
   if (ultraActiveState.ultraEngaged) {
@@ -1977,6 +2145,15 @@ try {
       {
         engaged: ultraSettledOff.ultraEngaged,
         particleAnimationCount: ultraSettledOff.ultraParticleAnimationCount,
+      },
+    );
+    check(
+      "ultra.lightningIconsReturnToNormalWhenDisabled",
+      !ultraSettledOff.triggerLightningUltraPurple && !ultraSettledOff.fastIconUltraPurple,
+      {
+        fastIconColor: ultraSettledOff.fastIconColor,
+        triggerLightningColor: ultraSettledOff.triggerLightningColor,
+        ultraEngaged: ultraSettledOff.ultraEngaged,
       },
     );
   }

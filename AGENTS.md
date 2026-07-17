@@ -43,6 +43,13 @@ For update-system changes:
 npm run verify:update
 ```
 
+For native-launcher changes:
+
+```powershell
+npm run build:launcher
+npm run verify:launcher
+```
+
 When a live account-backed UI check is required, use the documented diagnostic
 and self-test commands. Tests must not send chat messages, upload personal
 files, or perform destructive account actions. Read `docs/TESTING.md` before

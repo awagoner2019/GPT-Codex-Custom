@@ -21,6 +21,7 @@ $AsarCli = Join-Path $ProjectRoot "node_modules\@electron\asar\bin\asar.js"
 $BuildScript = Join-Path $PSScriptRoot "Build-Custom.ps1"
 $VerifyScript = Join-Path $PSScriptRoot "Verify-Custom.ps1"
 $OfficialPackageScript = Join-Path $PSScriptRoot "Ensure-OfficialPackage.ps1"
+$ShortcutScript = Join-Path $PSScriptRoot "Install-LauncherShortcut.ps1"
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
 function Assert-ProjectPath {
@@ -33,7 +34,7 @@ function Assert-ProjectPath {
     }
 }
 
-foreach ($requiredPath in @($AsarCli, $BuildScript, $VerifyScript, $OfficialPackageScript)) {
+foreach ($requiredPath in @($AsarCli, $BuildScript, $VerifyScript, $OfficialPackageScript, $ShortcutScript)) {
     if (-not (Test-Path -LiteralPath $requiredPath)) {
         throw "Required setup dependency is missing: $requiredPath`nRun npm ci before npm run setup."
     }
@@ -138,6 +139,12 @@ try {
     & $BuildScript
 
     & $VerifyScript
+
+    try {
+        & $ShortcutScript
+    } catch {
+        Write-Warning "The app was built, but its Start Menu shortcut could not be created: $_"
+    }
 
     Write-Host "GPT + Codex Custom is initialized and verified." -ForegroundColor Green
     Write-Host "The official installed package was read but not modified."

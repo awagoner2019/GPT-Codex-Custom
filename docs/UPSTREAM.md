@@ -4,9 +4,9 @@ The private source package is the installed combined ChatGPT/Codex Windows app:
 
 ```text
 Package family: OpenAI.Codex_2p2nqsd0c76g0
-Package full name: OpenAI.Codex_26.707.9564.0_x64__2p2nqsd0c76g0
-Package version: 26.707.9564.0
-App version: 26.707.71524
+Package full name: OpenAI.Codex_26.707.9981.0_x64__2p2nqsd0c76g0
+Package version: 26.707.9981.0
+App version: 26.707.72221
 Declared display name: ChatGPT
 Entry executable: app/ChatGPT.exe
 Protocol: codex://

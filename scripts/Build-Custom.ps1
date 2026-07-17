@@ -26,6 +26,7 @@ $CustomRoot = Join-Path $ProjectRoot "custom"
 $AsarCli = Join-Path $ProjectRoot "node_modules\@electron\asar\bin\asar.js"
 $OutputArchive = Join-Path $RepackedRoot "app.asar"
 $UpstreamManifestPath = Join-Path $ProjectRoot "upstream.json"
+$LauncherBuildScript = Join-Path $PSScriptRoot "Build-Launcher.ps1"
 
 if (-not (Test-Path -LiteralPath $UpstreamManifestPath)) {
     throw "Upstream manifest is missing: $UpstreamManifestPath"
@@ -93,6 +94,7 @@ foreach ($requiredPath in @(
     $UpstreamSource,
     $RuntimeResources,
     $AsarCli,
+    $LauncherBuildScript,
     (Join-Path $CustomRoot "gpt-codex-custom.css"),
     (Join-Path $CustomRoot "gpt-codex-custom.js"),
     (Join-Path $CustomRoot "gpt-codex-token-hud.css"),
@@ -631,13 +633,27 @@ $composerTokenReplacement = 'let u=c,d=$e(me.showContextWindowUsage),f=_(ha,u),G
 $composerTokenNeedleNew = 'let u=c,d=$e(pe.showContextWindowUsage),f=_(ha,u),p;'
 $composerTokenReplacementNew = 'let u=c,d=$e(pe.showContextWindowUsage),f=_(ha,u),GPTCodexTokenComposer=(0,Fk.useRef)(null),GPTCodexComposerMode=globalThis.GPT_CODEX_CUSTOM_NATIVE_PRODUCT_MODES?.mode;if(GPTCodexTokenComposer.current==null&&(GPTCodexComposerMode===`work`||GPTCodexComposerMode===`codex`)){let GPTCodexComposerGeneration=(Number(globalThis.GPT_CODEX_CUSTOM_TOKEN_COMPOSER_SEQUENCE)||0)+1;globalThis.GPT_CODEX_CUSTOM_TOKEN_COMPOSER_SEQUENCE=GPTCodexComposerGeneration,GPTCodexTokenComposer.current={id:`${GPTCodexComposerMode}:${GPTCodexComposerGeneration}`,generation:GPTCodexComposerGeneration,mode:GPTCodexComposerMode}}document.documentElement.getAttribute(`data-gpt-codex-custom-mode`)===`chat`||GPTCodexTokenComposer.current==null||globalThis.GPT_CODEX_CUSTOM_SYNC_TOKEN_CONTEXT?.({mode:GPTCodexTokenComposer.current.mode,threadId:u,tokenUsage:f,source:`composer`,composerId:GPTCodexTokenComposer.current.id,composerGeneration:GPTCodexTokenComposer.current.generation});let p;'
 $composerTokenReplacementLatest = 'let u=c,d=$e(pe.showContextWindowUsage),f=_(ha,u),GPTCodexTokenComposer=(0,qO.useRef)(null),GPTCodexComposerMode=globalThis.GPT_CODEX_CUSTOM_NATIVE_PRODUCT_MODES?.mode;if(GPTCodexTokenComposer.current==null&&(GPTCodexComposerMode===`work`||GPTCodexComposerMode===`codex`)){let GPTCodexComposerGeneration=(Number(globalThis.GPT_CODEX_CUSTOM_TOKEN_COMPOSER_SEQUENCE)||0)+1;globalThis.GPT_CODEX_CUSTOM_TOKEN_COMPOSER_SEQUENCE=GPTCodexComposerGeneration,GPTCodexTokenComposer.current={id:`${GPTCodexComposerMode}:${GPTCodexComposerGeneration}`,generation:GPTCodexComposerGeneration,mode:GPTCodexComposerMode}}document.documentElement.getAttribute(`data-gpt-codex-custom-mode`)===`chat`||GPTCodexTokenComposer.current==null||globalThis.GPT_CODEX_CUSTOM_SYNC_TOKEN_CONTEXT?.({mode:GPTCodexTokenComposer.current.mode,threadId:u,tokenUsage:f,source:`composer`,composerId:GPTCodexTokenComposer.current.id,composerGeneration:GPTCodexTokenComposer.current.generation});let p;'
+$composerTokenReplacementCurrent = $composerTokenReplacementLatest.Replace('(0,qO.useRef)(null)', '(0,Pk.useRef)(null)')
 $composerTokenSequences = @(
     [pscustomobject]@{ Name = "26.707.31428"; Needle = $composerTokenNeedle; Replacement = $composerTokenReplacement }
 )
-if ([string]$UpstreamManifest.appVersion -eq "26.707.71524") {
-    $composerTokenSequences += [pscustomobject]@{ Name = "26.707.71524"; Needle = $composerTokenNeedleNew; Replacement = $composerTokenReplacementLatest }
-} else {
-    $composerTokenSequences += [pscustomobject]@{ Name = "26.707.51957 / 26.707.62119"; Needle = $composerTokenNeedleNew; Replacement = $composerTokenReplacementNew }
+switch ([string]$UpstreamManifest.appVersion) {
+    "26.707.31428" { }
+    "26.707.51957" {
+        $composerTokenSequences += [pscustomobject]@{ Name = "26.707.51957"; Needle = $composerTokenNeedleNew; Replacement = $composerTokenReplacementNew }
+    }
+    "26.707.62119" {
+        $composerTokenSequences += [pscustomobject]@{ Name = "26.707.62119"; Needle = $composerTokenNeedleNew; Replacement = $composerTokenReplacementNew }
+    }
+    "26.707.71524" {
+        $composerTokenSequences += [pscustomobject]@{ Name = "26.707.71524"; Needle = $composerTokenNeedleNew; Replacement = $composerTokenReplacementLatest }
+    }
+    "26.707.72221" {
+        $composerTokenSequences += [pscustomobject]@{ Name = "26.707.72221"; Needle = $composerTokenNeedleNew; Replacement = $composerTokenReplacementCurrent }
+    }
+    default {
+        throw "The active composer token bridge has no reviewed React alias for upstream app version $($UpstreamManifest.appVersion)."
+    }
 }
 $composerTokenNeedles = @($composerTokenNeedle, $composerTokenNeedleNew)
 
@@ -697,6 +713,8 @@ $metadataJson = $buildMetadata | ConvertTo-Json -Depth 4
     $metadataJson + "`r`n",
     $utf8NoBom
 )
+
+& $LauncherBuildScript
 
 Write-Host "Custom GPT/Codex runtime built successfully." -ForegroundColor Green
 Write-Host "Runtime: $RuntimeRoot"

@@ -62,12 +62,21 @@ try {
     foreach ($requiredPublicFile in @(
         "Install-GPT-Codex-Custom.cmd",
         "docs\INSTALLATION.md",
+        "scripts\Build-Launcher.ps1",
         "scripts\Ensure-OfficialPackage.ps1",
+        "scripts\Install-LauncherShortcut.ps1",
+        "scripts\Launch-Custom-Gui.ps1",
+        "scripts\launcher\GPTCodexCustomLauncher.cs",
+        "scripts\launcher\GPTCodexCustomLauncher.manifest",
+        "scripts\Test-Launcher.ps1",
         "scripts\Test-OfficialPackageBootstrap.ps1"
     )) {
         if (-not (Test-Path -LiteralPath (Join-Path $ExtractAuditRoot $requiredPublicFile) -PathType Leaf)) {
             throw "The generated update package is missing required setup content: $requiredPublicFile"
         }
+    }
+    if (Test-Path -LiteralPath (Join-Path $ExtractAuditRoot "GPT-Codex-Custom.exe") -PathType Leaf) {
+        throw "The update package must rebuild the project-owned launcher locally instead of carrying a generated executable."
     }
 
     New-Item -ItemType Directory -Force -Path `

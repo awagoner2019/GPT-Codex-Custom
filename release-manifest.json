@@ -2,8 +2,8 @@
     "schemaVersion":  1,
     "project":  "GPTCodexCustom",
     "repository":  "awagoner2019/GPT-Codex-Custom",
-    "version":  "0.1.3",
-    "generatedAtUtc":  "2026-07-16T04:34:36.9500547Z",
+    "version":  "0.1.4",
+    "generatedAtUtc":  "2026-07-17T04:39:06.1984181Z",
     "files":  [
                   {
                       "path":  ".gitattributes",
@@ -17,7 +17,7 @@
                   },
                   {
                       "path":  ".github/ISSUE_TEMPLATE/bug_report.yml",
-                      "sha256":  "E43601EBF0DC136C6AB987C65FE01FEF5F2BD5613D6A48E35E66D87FC3183C21",
+                      "sha256":  "57B23ADC1CE086711B50CB2628EDAAA6FEEAB5061ECED5CB19340A21C32A2395",
                       "length":  1824
                   },
                   {
@@ -47,13 +47,13 @@
                   },
                   {
                       "path":  ".gitignore",
-                      "sha256":  "8E6210C672CABC3EF677CFB07DD0A40414F0A5918F5CD3D114B84ABE3E2DBFC9",
-                      "length":  666
+                      "sha256":  "34CE4FE07DFEC6F6CDDA2326296456DE6858A7216E78932614CB566962C9F2D2",
+                      "length":  839
                   },
                   {
                       "path":  "AGENTS.md",
-                      "sha256":  "879B534DE7A892009194EF456447DD75399FEFF2BE1A1871166AD1E06C8EA460",
-                      "length":  1808
+                      "sha256":  "1285E9DA06C32E7458F4F023E9EE981234B4EA7FAFEA8D25BF2A449C1A0B0213",
+                      "length":  1904
                   },
                   {
                       "path":  "config/update.json",
@@ -62,8 +62,8 @@
                   },
                   {
                       "path":  "CONTRIBUTING.md",
-                      "sha256":  "AF8D0508927A1D1A5DBEADB7A6F96511B1680B5F68CE14E728048CD88DB4BE16",
-                      "length":  2448
+                      "sha256":  "DAA0995697F56170EDBBD29FE047D9CA3694D29351520F2B9D41B583809B41FA",
+                      "length":  2683
                   },
                   {
                       "path":  "custom/gpt-codex-custom.css",
@@ -72,18 +72,18 @@
                   },
                   {
                       "path":  "custom/gpt-codex-custom.js",
-                      "sha256":  "E910F3201ACE22D2950363108D5568511D634784CDAC7555250F19E8871C0C35",
-                      "length":  193686
+                      "sha256":  "0F5BE2CF2F8E16AAB8D985EF6AED53E9A23F8E2EA58B82D009AA49ADDCCCEF32",
+                      "length":  196141
                   },
                   {
                       "path":  "custom/gpt-codex-model-picker.css",
-                      "sha256":  "20EAC4C02CAD506070E3F7FE463A1B6319E8B368E5F16EAB2962C02F9D21CED6",
-                      "length":  36945
+                      "sha256":  "AB882FE2971F08888204BF698A27DBE630CF2D0002AE72EF8A9BD6C0A41DF343",
+                      "length":  37690
                   },
                   {
                       "path":  "custom/gpt-codex-model-picker.js",
-                      "sha256":  "2B54DB4064FD5BA8966B933F1B39046C14564F956B9063BCF39749F27384B495",
-                      "length":  108556
+                      "sha256":  "5616B920142492C0A39F126B7761364C275B719D617E467686A74A30CB2D9FA0",
+                      "length":  119269
                   },
                   {
                       "path":  "custom/gpt-codex-pinboard.css",
@@ -107,8 +107,8 @@
                   },
                   {
                       "path":  "docs/ARCHITECTURE.md",
-                      "sha256":  "E2BF93ACE9F9DC554C6B9F3121BBFF14456BC39559205DF6B9673EE01F06A905",
-                      "length":  12432
+                      "sha256":  "BAA623CB66B727EA5F8FFB003EB53E54BE7350EA397744500410968B9B7B045A",
+                      "length":  14587
                   },
                   {
                       "path":  "docs/images/01-model-matrix-ultra-fast.png",
@@ -127,13 +127,13 @@
                   },
                   {
                       "path":  "docs/INSTALLATION.md",
-                      "sha256":  "E44D7295FAC23089057FA07A5EF2A400131BDF48F6E062653BFE9F4DFAAC8885",
-                      "length":  3737
+                      "sha256":  "42C2CED05044B68363C757FE953753FF6AD48C25A9749D281B3826A96E107B7D",
+                      "length":  5231
                   },
                   {
                       "path":  "docs/MODIFYING.md",
-                      "sha256":  "D3C6931C1FABA838037459EC801487129DE617B141FF70ACDE082C00E8C32554",
-                      "length":  4296
+                      "sha256":  "CF3DF386315E456C10A2588C983A2011748C25B5C7904DD51F0BA7B04BE2478C",
+                      "length":  5444
                   },
                   {
                       "path":  "docs/RELEASE_0.1.2.md",
@@ -146,49 +146,59 @@
                       "length":  1819
                   },
                   {
+                      "path":  "docs/RELEASE_0.1.4.md",
+                      "sha256":  "47BE5B58B128CCB3A3CC6565432FDD271C9F12DF8F8C90701D360A6B09571673",
+                      "length":  2593
+                  },
+                  {
                       "path":  "docs/SHOWCASE.md",
                       "sha256":  "E4AFD7EAA186E1E3F02F0D93EC1D730370371F4B1E9D3D060A5C54DD2BFC20EE",
                       "length":  1113
                   },
                   {
                       "path":  "docs/TESTING.md",
-                      "sha256":  "A2565D76620EB78C9AEDB28EAB9612BB5522A0C9DBF26B11B511E598A3615CB2",
-                      "length":  6691
+                      "sha256":  "1B862B1F7CF43D70390045A30B8E8B5C6931DE194C98D8A6A31B4F6FCC3FDFE8",
+                      "length":  7814
                   },
                   {
                       "path":  "docs/UPDATES.md",
-                      "sha256":  "9EF0A9D543EE8EE0B1860A4DA2F452D3E2FD2793FDD6ABBB0CAED1289FD61716",
-                      "length":  3385
+                      "sha256":  "4AF0FD113D1106BF88491BCAC76412D7738C77CDF46C25DE4E0E15F910810338",
+                      "length":  3811
                   },
                   {
                       "path":  "docs/UPSTREAM.md",
-                      "sha256":  "4D7C6F4893A1919ACE4A4445FE75F2413A5CA6E8CA956AE0A2FE19DD3FFC3047",
+                      "sha256":  "D52E1192B95634E3F12B7C63A8C92132FD419B85D4DC7E476F4AE9B940351653",
                       "length":  1348
                   },
                   {
                       "path":  "Install-GPT-Codex-Custom.cmd",
-                      "sha256":  "F04AF42F8D521C6D919726C54B723E6BBD93C0931EB1063CDF54710E7A3EE372",
-                      "length":  2588
+                      "sha256":  "33BD70ACF989F82A8795707E830C2C9CA9AA41686F314D12B8E0E34FAAE3F39E",
+                      "length":  3259
                   },
                   {
                       "path":  "package.json",
-                      "sha256":  "C86DB32B58EE1303C99EC21292ACDF1AD8A3165BF118FA79E8AB5DCAF36D2910",
-                      "length":  3806
+                      "sha256":  "74589D082F9D4EA9B06D9C8171E476B766C227EA1659A6E7B01F9572E662EE95",
+                      "length":  4253
                   },
                   {
                       "path":  "package-lock.json",
-                      "sha256":  "AFBF21CBA6112FBE5D0384CA23F3BBC40787B73CD7444F15A5A1605E3589158C",
+                      "sha256":  "3950342CF103012D78E7019DE87C254D83B30D016170C3A3765B8009A9AC294F",
                       "length":  5834
                   },
                   {
                       "path":  "README.md",
-                      "sha256":  "BC381370B1EC04589203260B6A5E9C69A28B5E2E4C248F3511E188CDE0EC76E8",
-                      "length":  9935
+                      "sha256":  "B68B7E9B0956AFD5A0011AF4F4AA2F62E538EB9CF5AD5595366B3152B66D92AA",
+                      "length":  11020
                   },
                   {
                       "path":  "scripts/Build-Custom.ps1",
-                      "sha256":  "39A7BF9294DE89B2194C235A690F663A3E74ADAA98E5BB9B9A5CE40EEC621BF1",
-                      "length":  72120
+                      "sha256":  "F3E36C229D60D529913034672BE6E35AD827DB5B2EEABB088944C0053BE41DBF",
+                      "length":  72907
+                  },
+                  {
+                      "path":  "scripts/Build-Launcher.ps1",
+                      "sha256":  "1BA3FFE27937DA38E621F95BDDF3F3A8EFFCB2941520D40F5B24F17FB78F1BA6",
+                      "length":  7316
                   },
                   {
                       "path":  "scripts/Capture-Custom-Screenshot.mjs",
@@ -207,13 +217,33 @@
                   },
                   {
                       "path":  "scripts/Initialize-Custom.ps1",
-                      "sha256":  "A50EFC421AB90692646BB9C3AFBAE8A186D9DBF16B7DA6DFA3A43DFAB02252E7",
-                      "length":  6768
+                      "sha256":  "3F53F9504B49020A990390093B2CA4FB42AD07E7BA18F2498D13D82EBBAB70CB",
+                      "length":  7008
+                  },
+                  {
+                      "path":  "scripts/Install-LauncherShortcut.ps1",
+                      "sha256":  "48350DE961E601A34E005897249A4AA0885057D6FF0EDF026214A53E2468292C",
+                      "length":  1471
                   },
                   {
                       "path":  "scripts/Launch-Custom.ps1",
                       "sha256":  "AC2D087381A54F90E82ABEF8E26035AF2C55EFC99F1BEBEFB6AE5FED54F5EB58",
                       "length":  15621
+                  },
+                  {
+                      "path":  "scripts/Launch-Custom-Gui.ps1",
+                      "sha256":  "383C88AF4F3E6C863580FDA41438E006843AD507C4C794BD0DF6C90B4796BAF0",
+                      "length":  3578
+                  },
+                  {
+                      "path":  "scripts/launcher/GPTCodexCustomLauncher.cs",
+                      "sha256":  "5A9287DB5F0E003FED745FED64127B01CD168E97CBD18710FF7E1B3D9A169158",
+                      "length":  10742
+                  },
+                  {
+                      "path":  "scripts/launcher/GPTCodexCustomLauncher.manifest",
+                      "sha256":  "B85663C9A863D12241740C87A46FAE4574E83C136D8C57640F33B0E474E47E52",
+                      "length":  771
                   },
                   {
                       "path":  "scripts/New-UpdatePackage.ps1",
@@ -222,8 +252,8 @@
                   },
                   {
                       "path":  "scripts/Prepare-DiagnosticChat.mjs",
-                      "sha256":  "43E975687FA17D0A2E76DF49457534BE5938B8F59528898DF13584CF8D0381A4",
-                      "length":  4940
+                      "sha256":  "DDA8DE61BE6D7732EAE8C7C6AE5EB98E23B160D71495C4F47724A8AD4BFC8D01",
+                      "length":  5658
                   },
                   {
                       "path":  "scripts/Sync-Upstream.ps1",
@@ -236,14 +266,19 @@
                       "length":  4644
                   },
                   {
+                      "path":  "scripts/Test-Launcher.ps1",
+                      "sha256":  "F103C39E87632E8E34637E438F0162D6B6543FACA3C80E3E1159E1D3BCC60192",
+                      "length":  5199
+                  },
+                  {
                       "path":  "scripts/Test-OfficialPackageBootstrap.ps1",
                       "sha256":  "E9022FCD0D193E1CD434E87F2725DF125FE2EB4420392DCDDA5CEA5C78A127DA",
                       "length":  11055
                   },
                   {
                       "path":  "scripts/Test-Update-Custom.ps1",
-                      "sha256":  "1BAA2D193288D8FE82F42B7373C21E54D1235A28A148DE5B0F6EC2705C497795",
-                      "length":  10417
+                      "sha256":  "F26CCD0AF5560994F1A53CCE6F214EBA59499071D4E5A5E83AACBDB62FAB16CF",
+                      "length":  10930
                   },
                   {
                       "path":  "scripts/Update-Custom.ps1",
@@ -257,8 +292,8 @@
                   },
                   {
                       "path":  "scripts/Verify-Custom.ps1",
-                      "sha256":  "15C312A44D97B3A06A528670BB0AC96F71B750B2FD08C507EDF4545692A04D84",
-                      "length":  62783
+                      "sha256":  "463DE5B5DF72B805AAD07C75F98E0C33174CAA27B4A71976876E938B0AAE98ED",
+                      "length":  66831
                   },
                   {
                       "path":  "scripts/Verify-Custom-Interactive.ps1",
@@ -267,8 +302,8 @@
                   },
                   {
                       "path":  "scripts/Verify-Model-Picker-Motion.mjs",
-                      "sha256":  "DDF582A9F70184DF3C879EA06895C63D1356CE6628C7BE0D5555CF6DA83B3BEE",
-                      "length":  97005
+                      "sha256":  "426206BD47D0370B53483531A2389DE3AC91E6A43640703E214EC562292B73B5",
+                      "length":  104715
                   },
                   {
                       "path":  "scripts/Verify-Token-Hud-Dock.mjs",
@@ -282,8 +317,8 @@
                   },
                   {
                       "path":  "Start-GPT-Codex-Custom.cmd",
-                      "sha256":  "ECE6B7774BC06B632FBE7CE1FD586537DC27FAC713C4738943AB170B6EFA78EE",
-                      "length":  142
+                      "sha256":  "FE146A74326B60381B866F0D0E632A131FA3A1AA0CCD2E8C49043935D5660272",
+                      "length":  208
                   }
               ]
 }

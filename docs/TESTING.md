@@ -38,20 +38,27 @@ installed Microsoft Store app remains outside its scope.
 
 | Command | Purpose | Account or UI effect | Requires diagnostics? |
 | --- | --- | --- | --- |
-| `npm run verify` | Static hashes, injection markers, bridge contracts, profile isolation, and sanitized report | No account action; writes `work/verification/release-verification.json` | No |
+| `npm run verify` | Static hashes, native-launcher contract, injection markers, bridge contracts, profile isolation, and sanitized report | No account action; writes `work/verification/release-verification.json` | No |
+| `npm run verify:launcher` | PE GUI subsystem, console-free default, explicit console fallback, parent-exit update handoff, native error dialog, and non-launching probe | Does not start the runtime or touch account state | No |
 | `npm run verify:installer` | Installer prerequisite plus eight bootstrap/signature scenarios | Downloads Microsoft's signed installer to a temporary path; does not install it | No |
 | `npm run verify:update` | ZIP allowlist, hashes, rollback, retired-file cleanup, and private-state preservation | Uses a temporary fixture only | No |
 | `npm run self-test:replace` | Strict end-to-end renderer action contract | Navigates the isolated app, opens saved chats, creates an unsent local chat, runs search, uses action dry runs, and stages/removes a synthetic PNG; sends no message and changes no saved conversation/share state | Temporary, managed automatically |
 | `npm run launch:diagnostics:replace` | Starts the isolated renderer on a random loopback DevTools port | Replaces only the custom runtime | Starts it |
 | `npm run verify:interactive` | Read-only structure, capability, token, pinboard, model-picker, and geometry snapshot | Calls only named synchronous diagnostic probes; no clicks or dispatch | Yes |
 | `npm run verify:chat-actions` | Requires live bridge readiness plus current strict self-test evidence for Share, Rename, Pin, Archive, and Delete | Reads evidence; the underlying self-test actions are dry runs | Yes |
-| `npm run verify:motion` | Samples continuous drag, interruption, Ultra/Fast effects, mode switching, and native-selector suppression | Temporarily changes the native model choice and restores the starting choice | Yes |
+| `npm run verify:motion` | Audits exact account-backed Chat/Work/Codex model combinations, then samples full trigger labels, continuous drag, interruption, Ultra-purple/Fast effects, mode switching, and native-selector suppression | Temporarily changes the native model choice and restores the starting choice | Yes |
 | `npm run verify:token-dock` | Dock geometry, expansion, precision, and motion behavior | Temporarily changes local HUD/motion state and restores it | Yes |
 | `npm run verify:ui-suite` | Runs the complete live sequence and restores normal launch | Combination of the controlled effects above | Managed automatically |
 
 `npm run verify:chat-delete` remains a compatibility-focused check for the
 Delete path and its existing self-test evidence. New conversation-menu work
 should use `verify:chat-actions` and the full UI suite.
+
+The launcher verifier invokes only `GPT-Codex-Custom.exe --launcher-probe` with
+a temporary output path. That internal probe reports the resolved scripts and
+runtime path, then exits before starting PowerShell or ChatGPT. The verifier
+also reads the PE optional header and requires subsystem 2 (`Windows GUI`), so a
+regression to a console executable fails the static gate.
 
 ## Focused diagnostic loop
 
@@ -77,8 +84,10 @@ without `--remote-debugging-port`.
 The renderer self-test may navigate between existing conversations and modes,
 but its server-affecting menu actions use the explicit
 `GPT_CODEX_CUSTOM_CHAT_ACTION_DRY_RUN` branch. Message editing uses its own dry
-run, and the generated-image test uploads only an in-memory synthetic PNG in
-temporary composer mode before removing it. It does not:
+run: it appends a harmless unique sentinel to the unsent editor, requires that
+sentinel in the native edit callback, closes the editor, and leaves the saved
+message unchanged. The generated-image test uploads only an in-memory synthetic
+PNG in temporary composer mode before removing it. It does not:
 
 - Send or regenerate a message.
 - Rename, pin, archive, delete, or publish a conversation.
@@ -104,6 +113,9 @@ them before sharing.
 - If a motion test reports an unmounted picker after repeated mode switches,
   relaunch diagnostics once and inspect the mode-switch evidence in
   `work/verification/model-picker-motion.json` before changing selectors.
+- Do not use a Chat `versionOptions[].label` as the model identity of every child.
+  A group can contain fallback options from another model generation; the
+  child's `selectedLabel` and exact callback payload are authoritative.
 - If any live gate fails, confirm the final process is a normal custom launch
   and has no `--remote-debugging-port` argument.
 

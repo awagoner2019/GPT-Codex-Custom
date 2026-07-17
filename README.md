@@ -27,13 +27,20 @@ after the package is ready. The official package remains read-only.
 - A reliable full-screen generated-image viewer with zoom, keyboard/backdrop
   close, focus restoration, and edit handoff through the native attachment and
   `picture_v2` workflow.
-- A fluid account-backed model/effort matrix, a separate Ultra lever with moving
-  particles, and the native Fast tier with a lightning activation effect.
+- A fluid account-backed model/effort matrix that renders only exact combinations
+  exposed by the active Chat or Work/Codex catalog. Mixed upstream groups cannot
+  manufacture combinations such as `GPT-5.6 Instant`, and the composer trigger
+  always shows the option's real full model and effort. It also has a separate Ultra lever with moving particles and
+  purple lightning state, and the native Fast tier with a lightning activation
+  effect.
 - A right-edge token dock for input, output, thinking, total, source precision,
   and context-window use. Server values are shown as exact when the app exposes
   them; Chat-only estimates are labeled estimated.
 - A cross-mode pinboard stored only in the custom copy's isolated Chromium
   profile.
+- A native `GPT-Codex-Custom.exe` launcher and Start Menu entry. Normal startup
+  is console-free; the CMD/PowerShell launchers remain available for explicit
+  troubleshooting.
 - An opt-in-safe source updater with release checks, SHA-256 and per-file
   verification, a strict path allowlist, local-change protection, backup,
   rebuild/verification, and rollback.
@@ -57,6 +64,7 @@ Git and release packages:
 | `vendor/package/` | Private copy of the installed package | No |
 | `work/upstream-src/` | Private extracted upstream archive | No |
 | `work/runtime/` | Independently launchable custom copy | No |
+| `GPT-Codex-Custom.exe` | Locally compiled project-owned GUI launcher | No |
 | `profile/` | Isolated account and Codex profile state | No |
 | `logs/`, `updates/`, `dist/` | Local generated state | No |
 
@@ -68,6 +76,8 @@ Git and release packages:
   You do not need to browse to the Store or install it before running setup;
   setup opens Microsoft's official signed installer automatically when needed.
 - PowerShell 5.1 or newer.
+- Windows .NET Framework 4.8 (normally present on supported Windows versions)
+  so setup can compile the small project-owned launcher.
 - Node.js 20 or newer with npm.
 - Enough free disk space for a private copy of the installed app.
 
@@ -78,9 +88,10 @@ Recommended release install:
 1. Download and extract `gpt-codex-custom-update.zip` from the latest release.
 2. Double-click `Install-GPT-Codex-Custom.cmd`.
 
-The setup checks Node.js/npm, installs the pinned build dependency, opens
-Microsoft's verified ChatGPT installer only when required, builds the isolated
-runtime, runs verification, and offers to launch it. See
+The setup checks Node.js/npm and the Windows C# compiler, installs the pinned
+build dependency, opens Microsoft's verified ChatGPT installer only when
+required, builds the isolated runtime and native launcher, installs a per-user
+Start Menu shortcut, runs verification, and offers to launch it. See
 [Installation](docs/INSTALLATION.md) for the trust chain and recovery guide.
 
 Manual source setup:
@@ -90,7 +101,7 @@ git clone https://github.com/awagoner2019/GPT-Codex-Custom.git
 cd GPT-Codex-Custom
 npm ci
 npm run setup
-npm run launch
+./GPT-Codex-Custom.exe
 ```
 
 `npm run setup` first detects the official package. If it is absent, setup
@@ -123,9 +134,13 @@ the repository never hosts that payload. See the
 [OpenAI Terms of Use](https://openai.com/policies/terms-of-use/) and
 [OpenAI Service Terms](https://openai.com/policies/service-terms/).
 
-After a successful setup, `Start-GPT-Codex-Custom.cmd` launches the custom copy.
-The normal launcher checks for a custom-source update at most once every 24
-hours. `npm run launch:no-update` skips that check.
+After successful setup, launch **GPT + Codex Custom** from the Start Menu or
+double-click `GPT-Codex-Custom.exe`. It is a Windows GUI executable and does not
+open a command window. `Start-GPT-Codex-Custom.cmd` and `npm run launch` remain
+the intentional console/developer paths; `GPT-Codex-Custom.exe --console` also
+opts into visible PowerShell output. The normal launcher checks for a
+custom-source update at most once every 24 hours. `--no-update` or
+`npm run launch:no-update` skips that check.
 
 ## Normal development loop
 
@@ -213,11 +228,11 @@ for the complete trust model and release procedure.
 
 ## Current upstream fingerprint
 
-- Package: `OpenAI.Codex_26.707.9564.0_x64__2p2nqsd0c76g0`
-- Package version: `26.707.9564.0`
-- App version: `26.707.71524`
-- UI archive SHA-256: `7F276BD33EC415B075038D4FC5B019045E20207716F919710E9A3CAD02A7A776`
-- Launcher SHA-256: `28C3E8B6C55FFF39ECB12A5EB27F493ABF997804247517AA7A46C277CA5D9E93`
+- Package: `OpenAI.Codex_26.707.9981.0_x64__2p2nqsd0c76g0`
+- Package version: `26.707.9981.0`
+- App version: `26.707.72221`
+- UI archive SHA-256: `E286D538971D7B4648692B244D80B0B1E9D227D29564275AD46F6653280D4094`
+- Upstream app executable SHA-256: `28C3E8B6C55FFF39ECB12A5EB27F493ABF997804247517AA7A46C277CA5D9E93`
 
 `upstream.json` is the machine-readable source of truth. These values identify
 the maintainer's compatibility baseline; each user still creates their own local

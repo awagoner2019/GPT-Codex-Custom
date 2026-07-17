@@ -1,9 +1,9 @@
 {
     "packageName":  "OpenAI.Codex",
-    "packageFullName":  "OpenAI.Codex_26.707.9564.0_x64__2p2nqsd0c76g0",
-    "packageVersion":  "26.707.9564.0",
-    "appVersion":  "26.707.71524",
-    "appAsarSha256":  "7F276BD33EC415B075038D4FC5B019045E20207716F919710E9A3CAD02A7A776",
+    "packageFullName":  "OpenAI.Codex_26.707.9981.0_x64__2p2nqsd0c76g0",
+    "packageVersion":  "26.707.9981.0",
+    "appVersion":  "26.707.72221",
+    "appAsarSha256":  "E286D538971D7B4648692B244D80B0B1E9D227D29564275AD46F6653280D4094",
     "executableSha256":  "28C3E8B6C55FFF39ECB12A5EB27F493ABF997804247517AA7A46C277CA5D9E93",
-    "capturedAtUtc":  "2026-07-16T01:15:41.6965451Z"
+    "capturedAtUtc":  "2026-07-17T03:45:14.2571930Z"
 }

@@ -13,6 +13,10 @@ dist/
 node_modules/
 npm-debug.log*
 
+# Locally compiled project-owned Windows launcher. Releases rebuild it from
+# the maintained C# source so no OpenAI executable is ever published here.
+GPT-Codex-Custom.exe
+
 # Workspace-local agent context is useful on the maintainer's machine but
 # contains unrelated project routing information.
 .mex/

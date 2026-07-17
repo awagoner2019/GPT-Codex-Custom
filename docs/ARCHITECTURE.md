@@ -25,10 +25,34 @@ the temporary file, and never launches the installer. This removes the manual
 Store-navigation prerequisite without redistributing or directly registering an
 OpenAI package.
 
+## Native Windows launcher
+
+`scripts/launcher/GPTCodexCustomLauncher.cs` is compiled locally by
+`scripts/Build-Launcher.ps1` as `GPT-Codex-Custom.exe` with the Windows GUI
+subsystem. A normal double-click therefore creates no console window. The
+launcher starts `scripts/Launch-Custom-Gui.ps1` in a hidden Windows PowerShell
+process; that wrapper serializes concurrent starts, records output in
+`logs/launcher.log`, calls the same maintained `Launch-Custom.ps1` pipeline used
+by developers, and displays a native error dialog on failure.
+
+The GUI executable exits before the wrapper performs update checks. The wrapper
+accepts the launcher's process ID and waits for that parent to exit, which makes
+it safe for an accepted source update to recompile or replace the launcher. The
+explicit `--console` option bypasses the GUI wrapper and invokes the maintained
+launch script visibly. The legacy CMD launcher remains a separate opt-in path.
+
+The generated EXE contains only project-owned launcher code and a generated
+custom icon. It is ignored by Git and omitted from update archives; setup and
+every normal local rebuild compile it from the maintained C# source. It never
+contains or modifies an OpenAI binary.
+
 ## Runtime layers
 
 ```text
-ChatGPT.exe / Chromium shell
+GPT-Codex-Custom.exe / native GUI launcher
+  -> hidden GUI wrapper or explicit console path
+  -> scripts/Launch-Custom.ps1
+  -> work/runtime/ChatGPT.exe / Chromium shell
   -> resources/app.asar
        -> .vite/build/early-bootstrap.js       main-process bootstrap
        -> .vite/build/main-*.js                desktop process and IPC
@@ -90,6 +114,11 @@ the shipped trigger is restored.
 The renderer mounts one mode-aware picker against Chat's composer form or the
 native Work/Codex `.composer-surface-chrome`. Chat uses the account-backed
 conversation selector and presents Instant, Medium, High, Extra high, and Pro.
+Chat catalog version groups are organizational only: each option's own
+`selectedLabel`, slug, lane, and effort determine its public model row and
+column. This matters because an upstream group labeled for a newer model may
+contain an older fallback option. The picker deduplicates exact native payloads,
+fails closed on unknown effort labels, and never fills a missing matrix cell.
 Work and Codex use the filtered native model catalog and composer setter; their
 effort columns are generated from real account capabilities and currently read
 Low, Medium, High, Extra high, and Max. Max never aliases Ultra: the separate
@@ -97,8 +126,12 @@ lever is available only when the catalog contains an explicit `ultra` effort.
 The exact native bridge also forwards the account's Fast service-tier option and
 setter. The custom switch remains non-optimistic: pending UI is separate from
 checked state, and a lightning confirmation effect runs only after a matching
-native snapshot. The shipped trigger is visually suppressed in every mode while
-the replacement is mounted. Motion remains renderer-local and never becomes a
+native snapshot. The replacement trigger derives a full model-plus-effort label,
+opts out of footer flex shrinking, and expands left from the preserved native
+anchor so its text is never ellipsized. When genuine Ultra is selected, both the
+composer lightning badge and the Fast-control lightning glyph use the Ultra
+purple state token. The shipped trigger is visually suppressed in every mode
+while the replacement is mounted. Motion remains renderer-local and never becomes a
 second source of model or service-tier state: the drag visual follows the pointer continuously,
 release resolves to the nearest genuine account-backed stop, the native bridge
 remains authoritative, and the next native snapshot animates to the confirmed
@@ -190,8 +223,9 @@ and this project makes no such capability claim.
 `npm run verify:motion` is the deliberately interactive companion limited to
 the model picker. It dispatches pointer input through the exact renderer,
 samples intermediate computed geometry instead of checking only end states,
-verifies interruption and reduced-motion semantics, and restores the starting
-native choice before it exits.
+verifies interruption and reduced-motion semantics, audits every displayed Chat,
+Work, and Codex model/effort pair against the active account snapshots, and
+restores the starting native choice before it exits.
 
 The separate `npm run self-test` action suite deliberately exercises native
 behavior. It opens multiple account conversations, creates a new local chat,

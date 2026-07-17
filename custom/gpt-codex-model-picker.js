@@ -267,7 +267,7 @@ function isUltraOption(option) {
   return effort === "ultra" || /\bultra\b/iu.test(descriptor);
 }
 
-function detectMatrixColumn(option, defaultModelSlug, mode = "chat") {
+function detectMatrixColumn(option, mode = "chat") {
   if (isUltraOption(option)) return null;
   const effort = normalizeWords(option?.thinkingEffort);
   const lane = normalizeWords(option?.lane);
@@ -288,12 +288,103 @@ function detectMatrixColumn(option, defaultModelSlug, mode = "chat") {
   if (["extended", "high"].includes(effort)) return getMatrixColumn("high", mode);
   if (["xhigh", "x high"].includes(effort)) return getMatrixColumn("extra-high", mode);
   if (effort === "max") return getMatrixColumn(mode === "chat" ? "extra-high" : "max", mode);
-  if (["auto", "thinking"].includes(lane)) return getMatrixColumn("medium", mode);
-  if (option?.slug === defaultModelSlug) return getMatrixColumn("medium", mode);
+  if (lane === "instant") return getMatrixColumn("low", mode);
   return null;
 }
 
-function normalizeChoice(option, versionId, rowId, defaultModelSlug) {
+function escapeRegularExpression(value) {
+  return String(value ?? "").replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
+function formatPublicModelLabel(value) {
+  let label = String(value ?? "").replace(/\s+/gu, " ").trim();
+  if (!label) return "";
+  label = label.replace(/^gpt[\s_-]*/iu, "GPT-");
+  if (/^\d+(?:\.\d+)*(?:\b|(?=[A-Za-z]))/u.test(label)) label = `GPT-${label}`;
+  return label;
+}
+
+function deriveModelLabelFromSlug(value) {
+  const slug = String(value ?? "").trim();
+  if (!slug) return "";
+  const gptMatch = slug.match(/^gpt[-_. ]?(\d+(?:[-_.]\d+)*[a-z]?)/iu);
+  if (gptMatch) return `GPT-${gptMatch[1].replace(/[-_]/gu, ".")}`;
+  const oSeriesMatch = slug.match(/^(o\d+(?:[-_.]\d+)?)/iu);
+  if (oSeriesMatch) return oSeriesMatch[1].replace(/_/gu, "-");
+  return slug;
+}
+
+function isGenericEffortLabel(value) {
+  return /^(?:instant|low|medium|high|extra high|pro|max|ultra|minimal|none)$/iu.test(
+    normalizeWords(value),
+  );
+}
+
+function removeExactLabelSuffix(value, suffix) {
+  const label = String(value ?? "").trim();
+  const ending = String(suffix ?? "").trim();
+  if (!label || !ending) return label;
+  const pattern = escapeRegularExpression(ending).replace(/\s+/gu, "\\s+");
+  return label.replace(new RegExp(`\\s+${pattern}$`, "iu"), "").trim();
+}
+
+function deriveChatModelLabel(option, column) {
+  const selectedLabel = String(option?.selectedLabel ?? "").replace(/\s+/gu, " ").trim();
+  if (selectedLabel) {
+    const suffixes = [
+      option?.title,
+      column?.label,
+      "Extra High",
+      "Extra high",
+      "Instant",
+      "Medium",
+      "High",
+      "Pro",
+      "Low",
+      "Max",
+      "Ultra",
+    ]
+      .filter(Boolean)
+      .map((value) => String(value).trim())
+      .sort((left, right) => right.length - left.length);
+    let candidate = selectedLabel;
+    for (const suffix of suffixes) {
+      const stripped = removeExactLabelSuffix(candidate, suffix);
+      if (stripped !== candidate) {
+        candidate = stripped;
+        break;
+      }
+    }
+    if (candidate && !isGenericEffortLabel(candidate)) return formatPublicModelLabel(candidate);
+  }
+  return formatPublicModelLabel(deriveModelLabelFromSlug(option?.slug));
+}
+
+function chatModelIdentityKey(value) {
+  return normalizeWords(value).replace(/[^\p{L}\p{N}.]+/gu, "-");
+}
+
+function comparePublicModelLabels(left, right) {
+  const versionParts = (value) => {
+    const match = normalizeWords(value).match(/^gpt\s+(\d+(?:\.\d+)*)/u);
+    return match ? match[1].split(".").map(Number) : null;
+  };
+  const a = versionParts(left);
+  const b = versionParts(right);
+  if (a && b) {
+    const length = Math.max(a.length, b.length);
+    for (let index = 0; index < length; index += 1) {
+      const difference = (b[index] ?? 0) - (a[index] ?? 0);
+      if (difference) return difference;
+    }
+    return 0;
+  }
+  if (a) return -1;
+  if (b) return 1;
+  return 0;
+}
+
+function normalizeChoice(option, versionId, sourceId, defaultModelSlug, sourceOrder) {
   const selection = normalizeSelection({
     slug: option?.slug,
     thinkingEffort: option?.thinkingEffort,
@@ -301,18 +392,28 @@ function normalizeChoice(option, versionId, rowId, defaultModelSlug) {
   });
   if (!selection) return null;
   const ultra = isUltraOption(option);
+  const column = ultra ? null : detectMatrixColumn(option, "chat");
+  if (!ultra && !column) return null;
+  const modelLabel = deriveChatModelLabel(option, column);
+  if (!modelLabel) return null;
+  const rowId = `chat:${chatModelIdentityKey(modelLabel)}`;
   return Object.freeze({
     ...selection,
-    column: ultra ? null : detectMatrixColumn(option, defaultModelSlug, "chat"),
+    catalogBacked: true,
+    column,
     description:
       typeof option.description === "string" && option.description.trim()
         ? option.description.trim()
         : null,
+    isSourceDefault: selection.slug === defaultModelSlug,
     key: `${rowId}:${selection.slug}:${selection.thinkingEffort ?? ""}`,
     label:
       String(option.selectedLabel ?? option.title ?? option.slug ?? "Model").trim() || "Model",
     lane: option.lane == null ? null : String(option.lane),
+    modelLabel,
     rowId,
+    sourceId,
+    sourceOrder,
     ultra,
   });
 }
@@ -377,11 +478,47 @@ function buildRowSources(data) {
 }
 
 function buildModelRows(data, selected) {
-  return buildRowSources(data)
-    .map((source) => {
-      const choices = source.options
-        .map((option) => normalizeChoice(option, source.versionId, source.id, source.defaultModelSlug))
-        .filter(Boolean);
+  const grouped = new Map();
+  let sourceOrder = 0;
+  for (const source of buildRowSources(data)) {
+    for (const option of source.options) {
+      const choice = normalizeChoice(
+        option,
+        source.versionId,
+        source.id,
+        source.defaultModelSlug,
+        sourceOrder,
+      );
+      sourceOrder += 1;
+      if (!choice) continue;
+      const identity = chatModelIdentityKey(choice.modelLabel);
+      let group = grouped.get(identity);
+      if (!group) {
+        group = {
+          choices: [],
+          firstOrder: choice.sourceOrder,
+          id: choice.rowId,
+          label: choice.modelLabel,
+        };
+        grouped.set(identity, group);
+      }
+      const duplicateIndex = group.choices.findIndex(
+        (candidate) => selectionKey(candidate) === selectionKey(choice),
+      );
+      if (duplicateIndex < 0) {
+        group.choices.push(choice);
+      } else if (
+        selectionsMatch(choice, selected) &&
+        !selectionsMatch(group.choices[duplicateIndex], selected)
+      ) {
+        group.choices[duplicateIndex] = choice;
+      }
+    }
+  }
+
+  return [...grouped.values()]
+    .map((group) => {
+      const choices = group.choices;
       const cells = new Map();
       let ultraChoice = null;
       for (const choice of choices) {
@@ -395,9 +532,7 @@ function buildModelRows(data, selected) {
       }
       const selectedChoice = choices.find((choice) => selectionsMatch(choice, selected)) ?? null;
       const defaultChoice =
-        choices.find(
-          (choice) => !choice.ultra && choice.slug === source.defaultModelSlug && choice.column,
-        ) ??
+        choices.find((choice) => !choice.ultra && choice.isSourceDefault && choice.column) ??
         cells.get("medium") ??
         cells.get("high") ??
         [...cells.values()][0] ??
@@ -406,14 +541,19 @@ function buildModelRows(data, selected) {
         active: selectedChoice != null,
         choices,
         defaultChoice,
-        id: source.id,
-        label: source.label,
+        firstOrder: group.firstOrder,
+        id: group.id,
+        label: group.label,
         selectedChoice,
         supportedCells: cells,
         ultraChoice,
       });
     })
-    .filter((row) => row.supportedCells.size > 0 || row.ultraChoice != null);
+    .filter((row) => row.supportedCells.size > 0 || row.ultraChoice != null)
+    .sort(
+      (left, right) =>
+        comparePublicModelLabels(left.label, right.label) || left.firstOrder - right.firstOrder,
+    );
 }
 
 function normalizeNativeModelChoice(model, effortOption, rowId, columns) {
@@ -436,6 +576,7 @@ function normalizeNativeModelChoice(model, effortOption, rowId, columns) {
   const effortLabel = column?.label ?? (ultra ? "Ultra" : effort);
   return Object.freeze({
     ...selection,
+    catalogBacked: true,
     column,
     description:
       (typeof effortOption === "object" &&
@@ -446,6 +587,7 @@ function normalizeNativeModelChoice(model, effortOption, rowId, columns) {
     key: `${rowId}:${selection.slug}:${selection.thinkingEffort}`,
     label: `${modelLabel} ${effortLabel}`,
     lane: "reasoning",
+    modelLabel,
     rowId,
     ultra,
   });
@@ -1213,20 +1355,28 @@ function ensurePickerElements() {
   }
 }
 
-function compactSelectionLabel(state) {
+function fullSelectionLabel(state) {
   if (!state.selected) return "Choose model";
-  const rowLabel = state.activeRow?.label ?? "";
-  const choiceLabel = state.displayChoice?.label ?? state.selectedChoice?.label ?? state.selected.slug;
-  let base = choiceLabel || rowLabel;
-  if (/^\d+(?:\.\d+)?\b/u.test(base)) base = `GPT-${base}`;
-  if (state.ultraEngaged) {
-    return `${base}${/\bultra\b/iu.test(base) ? "" : " Ultra"}`.replace(/\s+/gu, " ").trim();
+  const selectedChoice = state.selectedChoice ?? null;
+  const exactChoiceLabel = formatPublicModelLabel(selectedChoice?.label);
+  if (exactChoiceLabel && !isGenericEffortLabel(exactChoiceLabel)) return exactChoiceLabel;
+
+  if (!selectedChoice) {
+    const unmatchedModelLabel = formatPublicModelLabel(
+      deriveModelLabelFromSlug(state.selected.slug) || state.selected.slug,
+    );
+    const unmatchedEffort = String(state.selected.thinkingEffort ?? "").replace(/[_-]+/gu, " ").trim();
+    return [unmatchedModelLabel, unmatchedEffort].filter(Boolean).join(" ");
   }
-  const columnLabel = state.displayChoice?.column?.label ?? "";
-  if (columnLabel && !normalizeWords(base).includes(normalizeWords(columnLabel))) {
-    base = `${base} ${columnLabel}`;
-  }
-  return base.replace(/\s+/gu, " ").trim();
+
+  const rowLabel = formatPublicModelLabel(
+    state.activeRow?.label || selectedChoice.modelLabel || deriveModelLabelFromSlug(state.selected.slug),
+  );
+  const effortLabel = state.ultraEngaged
+    ? "Ultra"
+    : selectedChoice.column?.label ?? state.displayChoice?.column?.label ?? "";
+  if (!effortLabel || normalizeWords(rowLabel).includes(normalizeWords(effortLabel))) return rowLabel;
+  return `${rowLabel} ${effortLabel}`.replace(/\s+/gu, " ").trim();
 }
 
 function createPanelHeader(state) {
@@ -1918,7 +2068,7 @@ function createSelectionDetail(state) {
   detail.className = "gpt-codex-model-picker__selection-detail";
   detail.setAttribute("aria-live", "polite");
   const label = document.createElement("strong");
-  label.textContent = compactSelectionLabel(state);
+  label.textContent = fullSelectionLabel(state);
   detail.appendChild(label);
   const description = document.createElement("span");
   description.textContent =
@@ -1984,7 +2134,7 @@ function renderPicker({ force = false } = {}) {
     ? "Loading models"
     : state.unavailable
       ? "Models unavailable"
-      : compactSelectionLabel(state);
+      : fullSelectionLabel(state);
   const focusedControlIdentity = getFocusedPanelControlIdentity() ?? pendingPanelFocusIdentity;
   const signature = JSON.stringify({
     bridgeKind: state.bridge?.kind ?? null,
@@ -2058,6 +2208,14 @@ function positionNativePickerHost() {
     return false;
   }
   pickerHost.style.width = `${anchorRect.width}px`;
+  const requiredTriggerWidth = Math.ceil(
+    Math.max(
+      anchorRect.width,
+      pickerTrigger?.scrollWidth ?? 0,
+      pickerTrigger?.getBoundingClientRect().width ?? 0,
+    ),
+  );
+  pickerHost.style.width = `${requiredTriggerWidth}px`;
   const hostRect = pickerHost.getBoundingClientRect();
   if (hostRect.width <= 0 || hostRect.height <= 0) return false;
   const margin = 8;
@@ -2467,6 +2625,20 @@ function getModelPickerProbe() {
       ? document.activeElement.getAttribute(CONTROL_ID_ATTRIBUTE)
       : null;
   const fastToggle = pickerPanel?.querySelector(".gpt-codex-model-picker__fast-toggle");
+  const fastIcon = pickerPanel?.querySelector(".gpt-codex-model-picker__fast-icon");
+  const triggerLabel = pickerTrigger?.querySelector(".gpt-codex-model-picker__trigger-label");
+  const triggerLightning = pickerTrigger?.querySelector(".gpt-codex-model-picker__lightning");
+  const triggerLabelRect = triggerLabel?.getBoundingClientRect() ?? null;
+  const triggerLabelStyle = triggerLabel ? getComputedStyle(triggerLabel) : null;
+  const triggerLightningColor = triggerLightning ? getComputedStyle(triggerLightning).color : null;
+  const fastIconColor = fastIcon ? getComputedStyle(fastIcon).color : null;
+  const isUltraPurple = (value) => {
+    const channels = String(value ?? "").match(/[\d.]+/gu)?.slice(0, 3).map(Number) ?? [];
+    return channels.length === 3 &&
+      Math.abs(channels[0] - 167) <= 1 &&
+      Math.abs(channels[1] - 139) <= 1 &&
+      Math.abs(channels[2] - 250) <= 1;
+  };
   const particles = [
     ...(pickerPanel?.querySelectorAll(".gpt-codex-model-picker__particle") ?? []),
   ];
@@ -2504,6 +2676,22 @@ function getModelPickerProbe() {
     isKeyboardActionableElement(element),
   ).length;
   const nativeFallbackReady = nativeFallbackIsReady(hiddenNativeSlot?.element);
+  const catalogBackedChoiceCount = state.rows.reduce(
+    (total, row) => total + row.choices.filter((choice) => choice.catalogBacked === true).length,
+    0,
+  );
+  const catalogChoiceCount = state.rows.reduce((total, row) => total + row.choices.length, 0);
+  const syntheticCombinationCount = state.rows.reduce(
+    (total, row) =>
+      total +
+      row.choices.filter(
+        (choice) =>
+          choice.catalogBacked !== true ||
+          normalizeWords(choice.modelLabel ?? row.label) !== normalizeWords(row.label) ||
+          (!choice.ultra && !choice.column),
+      ).length,
+    0,
+  );
   return Object.freeze({
     actionableControlCount:
       nativeActionableControlCount + (customReplacementActionable ? 1 : 0),
@@ -2511,6 +2699,12 @@ function getModelPickerProbe() {
     activeMode: state.mode,
     bridgeKind: state.bridge?.kind ?? null,
     bridgeReady: typeof state.bridge?.select === "function",
+    catalogBackedChoiceCount,
+    catalogChoiceCount,
+    catalogIntegrity:
+      catalogChoiceCount > 0 &&
+      catalogBackedChoiceCount === catalogChoiceCount &&
+      syntheticCombinationCount === 0,
     conversationId: state.bridge?.conversationId ?? null,
     fastAvailable: state.fastAvailable,
     fastEffective: state.fastEffective,
@@ -2519,6 +2713,8 @@ function getModelPickerProbe() {
     fastSupported: state.fastSupported,
     fastToggleChecked: fastToggle?.getAttribute("aria-checked") === "true",
     fastTogglePresent: Boolean(fastToggle),
+    fastIconColor,
+    fastIconUltraPurple: isUltraPurple(fastIconColor),
     anchorCenterYOffset,
     anchorLayoutPreserved: Boolean(anchorRect?.width > 0 && anchorRect?.height > 0),
     anchorRightOffset,
@@ -2572,10 +2768,26 @@ function getModelPickerProbe() {
     selected: state.selected,
     selectedColumn: state.displayChoice?.column?.id ?? null,
     selectedExactMatch: Boolean(state.selectedChoice),
+    syntheticCombinationCount,
     supportedIntersectionCount: state.rows.reduce(
       (total, row) => total + row.supportedCells.size,
       0,
     ),
+    expectedTriggerLabel: state.loading
+      ? "Loading models"
+      : state.unavailable
+        ? "Models unavailable"
+        : fullSelectionLabel(state),
+    triggerLabelFullyVisible: Boolean(
+      triggerLabel &&
+        triggerLabelRect &&
+        triggerLabelRect.width + 1 >= triggerLabel.scrollWidth &&
+        triggerLabelStyle?.overflow !== "hidden" &&
+        triggerLabelStyle?.textOverflow !== "ellipsis",
+    ),
+    triggerLabelText: triggerLabel?.textContent?.trim() ?? null,
+    triggerLightningColor,
+    triggerLightningUltraPurple: isUltraPurple(triggerLightningColor),
     ultraAvailable: state.rows.some((row) => row.ultraChoice != null),
     ultraCapableRowIds: state.rows
       .filter((row) => row.ultraChoice != null)
@@ -2586,6 +2798,29 @@ function getModelPickerProbe() {
       0,
     ),
     ultraParticleCount: particles.length,
+  });
+}
+
+function getModelPickerCatalogProbe() {
+  const state = readPickerState();
+  const displayedCombinations = state.rows.flatMap((row) =>
+    row.choices.map((choice) => ({
+      column: choice.ultra ? "ultra" : choice.column?.id ?? null,
+      label: choice.label,
+      model: row.label,
+      modelLabel: choice.modelLabel ?? row.label,
+      slug: choice.slug,
+      thinkingEffort: choice.thinkingEffort,
+      versionId: choice.versionId,
+    })),
+  );
+  return Object.freeze({
+    activeMode: state.mode,
+    bridgeKind: state.bridge?.kind ?? null,
+    displayedCombinations,
+    queryState: state.loading ? "loading" : state.unavailable ? "unavailable" : "ready",
+    selected: state.selected,
+    selectedExactMatch: Boolean(state.selectedChoice),
   });
 }
 
@@ -2601,54 +2836,91 @@ function runModelPickerSelfTest() {
     },
   };
   const fakeData = {
-    defaultModelSlug: "self-test-base",
+    defaultModelSlug: "gpt-5-5",
     options: [],
     versionOptions: [
       {
-        defaultModelSlug: "self-test-base",
-        id: "self-test-version",
-        label: "Account row",
+        defaultModelSlug: "gpt-5-5",
+        id: "latest",
+        label: "GPT-5.6 Sol",
         options: [
-          { lane: "instant", slug: "self-test-base", title: "Account model" },
+          {
+            lane: "instant",
+            selectedLabel: "5.5 Instant",
+            slug: "gpt-5-5",
+            title: "Instant",
+          },
           {
             lane: "thinking",
-            slug: "self-test-medium",
+            selectedLabel: "5.6 Medium",
+            slug: "gpt-5-6-thinking",
             thinkingEffort: "standard",
             title: "Medium",
           },
           {
             lane: "thinking",
-            slug: "self-test-high",
+            selectedLabel: "5.6 High",
+            slug: "gpt-5-6-thinking",
             thinkingEffort: "extended",
             title: "High",
           },
           {
             lane: "thinking",
-            slug: "self-test-extra-high",
+            selectedLabel: "5.6 Extra High",
+            slug: "gpt-5-6-thinking",
             thinkingEffort: "max",
             title: "Extra High",
           },
           {
+            lane: "pro",
+            selectedLabel: "5.6 Pro",
+            slug: "gpt-5-6-pro",
+            title: "Pro",
+          },
+          {
             lane: "thinking",
-            slug: "self-test-ultra",
-            thinkingEffort: "ultra",
-            title: "Ultra",
+            selectedLabel: "5.6 Adaptive",
+            slug: "gpt-5-6-unknown",
+            title: "Adaptive",
+          },
+        ],
+      },
+      {
+        defaultModelSlug: "gpt-5-5",
+        id: "5.5",
+        label: "GPT-5.5",
+        options: [
+          {
+            lane: "instant",
+            selectedLabel: "5.5 Instant",
+            slug: "gpt-5-5",
+            title: "Instant",
+          },
+          {
+            lane: "thinking",
+            selectedLabel: "5.5 Medium",
+            slug: "gpt-5-5-thinking",
+            thinkingEffort: "standard",
+            title: "Medium",
           },
         ],
       },
     ],
   };
   const rows = buildModelRows(fakeData, {
-    slug: "self-test-high",
+    slug: "gpt-5-6-thinking",
     thinkingEffort: "extended",
-    versionId: "self-test-version",
+    versionId: "latest",
   });
-  const mediumChoice = rows[0]?.supportedCells.get("medium") ?? null;
-  const highChoice = rows[0]?.supportedCells.get("high") ?? null;
-  const extraHighChoice = rows[0]?.supportedCells.get("extra-high") ?? null;
-  const ultraChoice = rows[0]?.ultraChoice ?? null;
+  const gpt56Row = rows.find((row) => row.label === "GPT-5.6") ?? null;
+  const gpt55Row = rows.find((row) => row.label === "GPT-5.5") ?? null;
+  const instantChoice = gpt55Row?.supportedCells.get("low") ?? null;
+  const mediumChoice = gpt56Row?.supportedCells.get("medium") ?? null;
+  const highChoice = gpt56Row?.supportedCells.get("high") ?? null;
+  const extraHighChoice = gpt56Row?.supportedCells.get("extra-high") ?? null;
+  const proChoice = gpt56Row?.supportedCells.get("pro") ?? null;
   if (highChoice) selectThroughBridge(fakeBridge, highChoice);
-  if (ultraChoice) selectThroughBridge(fakeBridge, ultraChoice);
+  if (instantChoice) selectThroughBridge(fakeBridge, instantChoice);
   const nativeRows = buildNativeModelRows(
     [
       {
@@ -2666,16 +2938,53 @@ function runModelPickerSelfTest() {
   const nativeUltraChoice = nativeRows[0]?.ultraChoice ?? null;
   const realSelectionAfter = selectionKey(realBridge?.selected);
   const nativeSelectionUnchanged = realSelectionBefore === realSelectionAfter;
+  const fullSelectionLabels =
+    fullSelectionLabel({
+      activeRow: gpt55Row,
+      displayChoice: instantChoice,
+      selected: instantChoice,
+      selectedChoice: instantChoice,
+      ultraEngaged: false,
+    }) === "GPT-5.5 Instant" &&
+    fullSelectionLabel({
+      activeRow: gpt56Row,
+      displayChoice: extraHighChoice,
+      selected: extraHighChoice,
+      selectedChoice: extraHighChoice,
+      ultraEngaged: false,
+    }) === "GPT-5.6 Extra High" &&
+    fullSelectionLabel({
+      activeRow: nativeRows[0],
+      displayChoice: nativeUltraChoice,
+      selected: nativeUltraChoice,
+      selectedChoice: nativeUltraChoice,
+      ultraEngaged: true,
+    }) === "Native account model Ultra";
+  const exactCatalogRows = rows.every((row) =>
+    row.choices.every(
+      (choice) =>
+        choice.catalogBacked === true &&
+        choice.modelLabel === row.label &&
+        (choice.ultra || choice.column != null),
+    ),
+  );
+  const noSyntheticInstant =
+    gpt56Row?.supportedCells.has("low") === false &&
+    instantChoice?.label === "5.5 Instant" &&
+    instantChoice?.slug === "gpt-5-5";
+  const unknownEffortFailsClosed = rows.every((row) =>
+    row.choices.every((choice) => choice.slug !== "gpt-5-6-unknown"),
+  );
   const genuineMatrixMapping =
     mediumChoice?.thinkingEffort === "standard" &&
-    highChoice?.slug === "self-test-high" &&
+    highChoice?.slug === "gpt-5-6-thinking" &&
     highChoice?.thinkingEffort === "extended" &&
     extraHighChoice?.thinkingEffort === "max" &&
-    ultraChoice?.slug === "self-test-ultra" &&
-    ultraChoice?.thinkingEffort === "ultra" &&
+    proChoice?.slug === "gpt-5-6-pro" &&
+    proChoice?.thinkingEffort == null &&
     nativeMaxChoice?.thinkingEffort === "max" &&
     nativeUltraChoice?.thinkingEffort === "ultra";
-  const highPointerTarget = getNearestSupportedChoice(rows[0], 2);
+  const highPointerTarget = getNearestSupportedChoice(gpt56Row, 2);
   const literalModeLabels =
     getMatrixColumns("chat").map((column) => column.label).join("|") ===
       "Instant|Medium|High|Extra high|Pro" &&
@@ -2683,20 +2992,28 @@ function runModelPickerSelfTest() {
       "Low|Medium|High|Extra high|Max";
   return Object.freeze({
     fakeSelectCalls,
+    exactCatalogRows,
+    fullSelectionLabels,
     genuineMatrixMapping,
     highPointerTargetWorks: selectionKey(highPointerTarget) === selectionKey(highChoice),
     literalModeLabels,
+    noSyntheticInstant,
     nativeSelectionUnchanged,
     passed:
       fakeSelectCalls === 2 &&
+      exactCatalogRows &&
+      fullSelectionLabels &&
       genuineMatrixMapping &&
+      noSyntheticInstant &&
       selectionKey(highPointerTarget) === selectionKey(highChoice) &&
       literalModeLabels &&
       nativeSelectionUnchanged &&
-      fakeSelections.every((selection) => selection.versionId === "self-test-version"),
+      unknownEffortFailsClosed &&
+      fakeSelections.every((selection) => selection.versionId === "latest"),
     synchronous: true,
     ultraRequiresExplicitUltraOption:
-      ultraChoice?.thinkingEffort === "ultra" && nativeUltraChoice?.thinkingEffort === "ultra",
+      gpt56Row?.ultraChoice == null && nativeUltraChoice?.thinkingEffort === "ultra",
+    unknownEffortFailsClosed,
   });
 }
 
@@ -2743,6 +3060,13 @@ Object.defineProperty(globalThis, "GPT_CODEX_CUSTOM_MODEL_PICKER_PROBE", {
   configurable: false,
   enumerable: false,
   value: getModelPickerProbe,
+  writable: false,
+});
+
+Object.defineProperty(globalThis, "GPT_CODEX_CUSTOM_MODEL_PICKER_CATALOG_PROBE", {
+  configurable: false,
+  enumerable: false,
+  value: getModelPickerCatalogProbe,
   writable: false,
 });
 

@@ -25,15 +25,19 @@ other private data. Do not upload `profile/`, `logs/`, `work/`, or `vendor/`.
    `docs/`, or `.github/`.
 4. Run `npm run verify:installer` and `npm run verify:update` in a clean source
    checkout.
-5. If you have initialized a private runtime, also run `npm run build` and
+5. For launcher changes, run `npm run build:launcher` and
+   `npm run verify:launcher`.
+6. If you have initialized a private runtime, also run `npm run build` and
    `npm run verify`. For UI behavior, run `npm run verify:ui-suite`; it restores
    the normal non-diagnostic app after the live checks finish.
-6. Explain the native behavior used, the compatibility assumptions, and the
+7. Explain the native behavior used, the compatibility assumptions, and the
    checks you ran.
 
 Do not commit generated or private directories. The repository intentionally
 ignores `vendor/`, `work/`, `profile/`, `logs/`, `updates/`, `dist/`,
 `node_modules/`, and local workspace context.
+The locally compiled `GPT-Codex-Custom.exe` is generated output too; submit
+launcher changes through `scripts/launcher/` and the launcher scripts.
 
 ## UI compatibility
 

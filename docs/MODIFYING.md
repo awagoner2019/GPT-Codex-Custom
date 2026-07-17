@@ -15,6 +15,9 @@
 - `scripts/Build-Custom.ps1` validates the pinned upstream fingerprint, copies
   maintained assets into the isolated runtime, injects their tags, and applies
   narrow native bridge patches.
+- `scripts/launcher/GPTCodexCustomLauncher.cs`, `scripts/Build-Launcher.ps1`,
+  and `scripts/Launch-Custom-Gui.ps1` own the project-built Windows GUI launcher,
+  hidden launch transport, error dialog, and log handoff.
 - `scripts/Verify-Custom.ps1` is the static compatibility and release gate.
 
 ## Development cycle
@@ -27,6 +30,10 @@
 5. Run `npm run verify`.
 6. Launch and exercise the exact affected path.
 7. Run `npm run verify:ui-suite` before handoff or publication.
+
+For launcher-only changes, run `npm run build:launcher` followed by
+`npm run verify:launcher`; the full `npm run build` and `npm run verify` paths
+also include the launcher.
 
 `npm run launch:replace` deliberately closes only processes whose executable
 path matches this project's copied runtime. It never targets the Store build.
@@ -44,6 +51,9 @@ that a feature works. For each action, verify:
 - The native bridge is present before enabling the control.
 - The native snapshot confirms model, effort, service tier, route, or account
   state after the action.
+- For Chat models, derive a row from each option's exact `selectedLabel` or slug,
+  never from its enclosing version-group label; do not synthesize unsupported
+  row/column intersections.
 - Rejection or missing capability returns the UI to the confirmed state.
 - No message, upload, delete, or account mutation occurs in diagnostics unless
   the test explicitly uses a non-destructive dry-run bridge.
@@ -59,6 +69,16 @@ Generated-image thumbnails are intercepted only in Chat mode. Viewer changes
 must preserve Escape/backdrop dismissal, keyboard focus trapping and restoration,
 zoom reset, and the native attachment handoff used by Edit image. Work and Codex
 must retain their upstream image-click behavior.
+
+## Native launcher boundary
+
+Keep startup policy in `scripts/Launch-Custom.ps1`; the C# EXE is deliberately a
+small transport rather than a second implementation of profile isolation,
+updates, diagnostics, or process matching. Its normal path must remain a
+Windows GUI subsystem executable with `CreateNoWindow` enabled. Any visible
+console must require `--console`, the legacy CMD file, or an npm developer
+command. Generated `GPT-Codex-Custom.exe` files are build output and must not be
+committed; maintain and review the source under `scripts/launcher/` instead.
 
 ## Adding a maintained module
 

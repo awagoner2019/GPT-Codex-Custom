@@ -725,6 +725,10 @@ $MaintainedModelPickerCss = Join-Path $ProjectRoot "custom\gpt-codex-model-picke
 $MaintainedModelPickerJs = Join-Path $ProjectRoot "custom\gpt-codex-model-picker.js"
 $DevelopmentUiVerifier = Join-Path $ProjectRoot "scripts\Test-DevelopmentUi.ps1"
 $DiagnosticChatPreparation = Join-Path $ProjectRoot "scripts\Prepare-DiagnosticChat.mjs"
+$LauncherExecutable = Join-Path $ProjectRoot "GPT-Codex-Custom.exe"
+$LauncherSource = Join-Path $ProjectRoot "scripts\launcher\GPTCodexCustomLauncher.cs"
+$LauncherGuiScript = Join-Path $ProjectRoot "scripts\Launch-Custom-Gui.ps1"
+$LauncherTestScript = Join-Path $ProjectRoot "scripts\Test-Launcher.ps1"
 $OwlIni = Join-Path $ProjectRoot "work\runtime\resources\owl-app.ini"
 $AsarCli = Join-Path $ProjectRoot "node_modules\@electron\asar\bin\asar.js"
 $DiagnosticsFile = Join-Path $ProjectRoot "profile\chromium\gpt-codex-custom-diagnostics.json"
@@ -765,6 +769,10 @@ foreach ($requiredPath in @(
     $MaintainedModelPickerJs,
     $DevelopmentUiVerifier,
     $DiagnosticChatPreparation,
+    $LauncherExecutable,
+    $LauncherSource,
+    $LauncherGuiScript,
+    $LauncherTestScript,
     $OwlIni,
     $AsarCli
 )) {
@@ -794,6 +802,19 @@ $PatchedAppMainText = if ($PatchedAppMain.Count -eq 1) {
     Get-Content -Raw -LiteralPath $PatchedAppMain[0].FullName
 } else {
     ""
+}
+$PatchedComposerTokenText = if ($PatchedComposerToken.Count -eq 1) {
+    Get-Content -Raw -LiteralPath $PatchedComposerToken[0].FullName
+} else {
+    ""
+}
+$ExpectedComposerTokenUseRefMarker = switch ([string]$UpstreamManifest.appVersion) {
+    "26.707.31428" { '(0,Fk.useRef)(null)' }
+    "26.707.51957" { '(0,Fk.useRef)(null)' }
+    "26.707.62119" { '(0,Fk.useRef)(null)' }
+    "26.707.71524" { '(0,qO.useRef)(null)' }
+    "26.707.72221" { '(0,Pk.useRef)(null)' }
+    default { "__unsupported_composer_token_react_alias__" }
 }
 $NativeChatManagementBridgeContractPresent = ($PatchedAppMain.Count -eq 1)
 foreach ($requiredToken in @(
@@ -833,6 +854,13 @@ $ModelPickerMatrixContractPresent = (
     $MaintainedModelPickerJsText.Contains('setAttribute("role", "slider")') -and
     $MaintainedModelPickerJsText.Contains("supportedCells") -and
     $MaintainedModelPickerJsText.Contains("isPlaceholderData") -and
+    $MaintainedModelPickerJsText.Contains("deriveChatModelLabel") -and
+    $MaintainedModelPickerJsText.Contains("catalogBacked: true") -and
+    $MaintainedModelPickerJsText.Contains("catalogIntegrity") -and
+    $MaintainedModelPickerJsText.Contains("GPT_CODEX_CUSTOM_MODEL_PICKER_CATALOG_PROBE") -and
+    $MaintainedModelPickerJsText.Contains("syntheticCombinationCount") -and
+    -not $MaintainedModelPickerJsText.Contains('option?.slug === defaultModelSlug') -and
+    -not $MaintainedModelPickerJsText.Contains('["auto", "thinking"].includes(lane)') -and
     $MaintainedModelPickerCssText.Contains("gpt-codex-model-picker__slider-track") -and
     $MaintainedModelPickerCssText.Contains("gpt-codex-model-picker__slider-knob")
 )
@@ -861,6 +889,10 @@ $ModelPickerFluidMotionContractPresent = Test-ModelPickerFluidMotionContract `
 $ModelPickerSelfTestContractPresent = (
     $MaintainedModelPickerJsText.Contains("GPT_CODEX_CUSTOM_MODEL_PICKER_PROBE") -and
     $MaintainedModelPickerJsText.Contains("GPT_CODEX_CUSTOM_MODEL_PICKER_SELF_TEST") -and
+    $MaintainedModelPickerJsText.Contains("fullSelectionLabels") -and
+    $MaintainedModelPickerJsText.Contains("exactCatalogRows") -and
+    $MaintainedModelPickerJsText.Contains("noSyntheticInstant") -and
+    $MaintainedModelPickerJsText.Contains("unknownEffortFailsClosed") -and
     $MaintainedModelPickerJsText.Contains("nativeSelectionUnchanged") -and
     $MaintainedModelPickerJsText.Contains("ultraRequiresExplicitUltraOption") -and
     $MaintainedModelPickerJsText.Contains("synchronous: true")
@@ -905,6 +937,21 @@ $ModelPickerFastModeContractPresent = (
     $MaintainedModelPickerCssText.Contains("gpt-codex-model-picker-fast-icon-strike") -and
     $MaintainedModelPickerCssText.Contains("gpt-codex-model-picker-fast-spark")
 )
+$ModelPickerFullTriggerLabelContractPresent = (
+    $MaintainedModelPickerJsText.Contains("function fullSelectionLabel(state)") -and
+    $MaintainedModelPickerJsText.Contains("requiredTriggerWidth") -and
+    $MaintainedModelPickerJsText.Contains("expectedTriggerLabel") -and
+    $MaintainedModelPickerJsText.Contains("triggerLabelFullyVisible") -and
+    $MaintainedModelPickerCssText.Contains("min-width: max-content") -and
+    $MaintainedModelPickerCssText.Contains("text-overflow: clip")
+)
+$ModelPickerUltraPurpleLightningContractPresent = (
+    $MaintainedModelPickerJsText.Contains("triggerLightningUltraPurple") -and
+    $MaintainedModelPickerJsText.Contains("fastIconUltraPurple") -and
+    $MaintainedModelPickerCssText.Contains('.gpt-codex-model-picker[data-ultra-engaged="true"]') -and
+    $MaintainedModelPickerCssText.Contains('.gpt-codex-model-picker__panel[data-ultra-engaged="true"]') -and
+    $MaintainedModelPickerCssText.Contains("var(--gpt-codex-model-picker-purple)")
+)
 $TokenHudRightDockContractPresent = (
     $MaintainedTokenHudJsText.Contains("findSafeRightDockPosition") -and
     $MaintainedTokenHudJsText.Contains('document.getElementById("gpt-codex-custom-model-picker")') -and
@@ -914,6 +961,7 @@ $TokenHudRightDockContractPresent = (
     $MaintainedTokenHudCssText.Contains("--gpt-codex-token-hud-fixed-right") -and
     -not $MaintainedTokenHudCssText.Contains("--gpt-codex-token-hud-fixed-left")
 )
+$LauncherVerification = & $LauncherTestScript -PassThru
 
 $installedPackages = @(Get-AppxPackage -Name ([string]$UpstreamManifest.packageName))
 if ($installedPackages.Count -eq 0) {
@@ -942,6 +990,12 @@ $results = [ordered]@{
     vendorAsarPristine = (Test-UpstreamManifestValueMatch -Expected $ExpectedAsarHash -Observed $VendorAsarHash)
     vendorExePristine = (Test-UpstreamManifestValueMatch -Expected $ExpectedExeHash -Observed $VendorExeHash)
     runtimeExePristine = (Test-UpstreamManifestValueMatch -Expected $ExpectedExeHash -Observed $RuntimeExeHash)
+    nativeGuiLauncherBuilt = ($LauncherVerification.executablePresent -eq $true)
+    nativeGuiLauncherUsesWindowsSubsystem = ($LauncherVerification.windowsGuiSubsystem -eq $true)
+    nativeGuiLauncherIsConsoleFreeByDefault = ($LauncherVerification.defaultConsoleFree -eq $true -and $LauncherVerification.noCmdInDefaultLauncher -eq $true)
+    nativeGuiLauncherConsoleFallbackAvailable = ($LauncherVerification.consoleFallbackExplicit -eq $true)
+    nativeGuiLauncherUpdateHandshakePresent = ($LauncherVerification.parentExitUpdateHandshake -eq $true)
+    nativeGuiLauncherFailureDialogPresent = ($LauncherVerification.nativeFailureDialog -eq $true)
     runtimeAsarCustomized = ((Get-FileHash -LiteralPath $RuntimeAsar -Algorithm SHA256).Hash -ne $ExpectedAsarHash)
     rendererInjectionPresent = ((Get-Content -Raw -LiteralPath $PatchedIndex).Contains("GPT_CODEX_CUSTOM_INJECT"))
     customCssPresent = (Test-Path -LiteralPath $CustomCss)
@@ -961,13 +1015,14 @@ $results = [ordered]@{
     sideBySideBootstrap = ($PatchedBootstrap.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedBootstrap[0].FullName).Contains("GPT_CODEX_CUSTOM_BUILD"))
     firstClassChatProductMode = ($PatchedAppMain.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedAppMain[0].FullName).Contains("GPT_CODEX_CUSTOM_OPEN_CHAT"))
     selfTestProductModeRestorationIntegrated = ($MaintainedCustomJsText.Contains("storedProductModeBeforeSelfTest") -and $MaintainedCustomJsText.Contains("restoreStoredProductMode"))
-    developmentUiSuiteContractPresent = ($DevelopmentUiVerifierText.Contains("Transient Chat-mode preparation") -and $DevelopmentUiVerifierText.Contains("Restore normal custom runtime") -and $DiagnosticChatPreparationText.Contains('openChat({ persist: false })') -and $DiagnosticChatPreparationText.Contains("storedModeUnchanged"))
+    developmentUiSuiteContractPresent = ($DevelopmentUiVerifierText.Contains("Transient Chat-mode preparation") -and $DevelopmentUiVerifierText.Contains("Restore normal custom runtime") -and $DiagnosticChatPreparationText.Contains('openChat({ persist: false })') -and $DiagnosticChatPreparationText.Contains("storedModeUnchanged") -and $DiagnosticChatPreparationText.Contains("rendererEvaluationAttempts"))
     firstRunProductModeContract = ($StartupModeContractEvaluation.Passed -eq $true)
     persistentProductSelectorBridge = ($PatchedAppMain.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedAppMain[0].FullName).Contains("GPT_CODEX_CUSTOM_NATIVE_PRODUCT_MODES") -and (Get-Content -Raw -LiteralPath $CustomJs).Contains("gptCodexCustomProductSelector"))
     nativeChatSearchIntegrated = ($PatchedAppMain.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedAppMain[0].FullName).Contains("GPT_CODEX_CUSTOM_CHAT_SEARCH") -and (Get-Content -Raw -LiteralPath $CustomJs).Contains("GPT_CODEX_CUSTOM_SYNC_CHAT_SEARCH"))
     nativeChatDeletionIntegrated = ($PatchedAppMain.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedAppMain[0].FullName).Contains("GPT_CODEX_CUSTOM_CHAT_ACTIONS") -and (Get-Content -Raw -LiteralPath $PatchedAppMain[0].FullName).Contains("deleteConversation") -and (Get-Content -Raw -LiteralPath $CustomJs).Contains("openChatDeleteDialog"))
     nativeChatManagementIntegrated = $NativeChatManagementBridgeContractPresent
     sentMessageEditingIntegrated = ($PatchedChatGptThread.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedChatGptThread[0].FullName).Contains("onEditMessage") -and (Get-Content -Raw -LiteralPath $PatchedChatGptThread[0].FullName).Contains("GPT_CODEX_CUSTOM_EDIT_DRY_RUN"))
+    messageEditDryRunSentinelContractPresent = ($MaintainedCustomJsText.Contains("GPT_CODEX_CUSTOM_EDIT_DRY_RUN_") -and $MaintainedCustomJsText.Contains("promptIncludesSentinel") -and $MaintainedCustomJsText.Contains("dryRunResult.prompt.includes(dryRunSentinel)"))
     messageEditCancelGuardIntegrated = ($PatchedGeneratedImagePreview.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedGeneratedImagePreview[0].FullName).Contains("GPTCodexCancelGuard.current"))
     generatedImageEditingIntegrated = ($PatchedQuickChat.Count -eq 1 -and (Get-Content -Raw -LiteralPath $CustomJs).Contains("stageGeneratedImageForEditing"))
     generatedImageFullViewIntegrated = ($MaintainedCustomJsText.Contains("openGeneratedImageViewer") -and $MaintainedCustomJsText.Contains("handleGeneratedImagePreviewClick") -and $MaintainedCustomCssText.Contains(".gpt-codex-custom-image-viewer"))
@@ -976,7 +1031,7 @@ $results = [ordered]@{
     chatSessionInitialScrollModeForwarded = ($PatchedQuickChat.Count -eq 1 -and $PatchedQuickChatText.Contains('GPT_CODEX_CUSTOM_SYNC_SESSION?.({conversationId:T,initialScrollMode:D,title:O})'))
     crossModeMessageBridgeIntegrated = ($PatchedChatGptThread.Count -eq 1 -and $PatchedLocalTurn.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedChatGptThread[0].FullName).Contains("GPT_CODEX_CUSTOM_REGISTER_PINNABLE_MESSAGE") -and (Get-Content -Raw -LiteralPath $PatchedLocalTurn[0].FullName).Contains("GPT_CODEX_CUSTOM_REGISTER_PINNABLE_MESSAGE"))
     serverTokenUsageBridgeIntegrated = ($PatchedTokenUsage.Count -eq 1 -and (Get-Content -Raw -LiteralPath $PatchedTokenUsage[0].FullName).Contains("GPT_CODEX_CUSTOM_SYNC_TOKEN_USAGE") -and (Get-Content -Raw -LiteralPath $PatchedTokenUsage[0].FullName).Contains("GPT_CODEX_CUSTOM_RESOLVE_TOKEN_MODE"))
-    activeTokenContextBridgeIntegrated = ($PatchedComposerToken.Count -eq 1)
+    activeTokenContextBridgeIntegrated = ($PatchedComposerToken.Count -eq 1 -and $PatchedComposerTokenText.Contains($ExpectedComposerTokenUseRefMarker))
     tokenHudContractPresent = ((Get-Content -Raw -LiteralPath $TokenHudJs).Contains("GPT_CODEX_CUSTOM_SYNC_TOKEN_USAGE") -and (Get-Content -Raw -LiteralPath $TokenHudJs).Contains("GPT_CODEX_CUSTOM_TOKEN_PROBE") -and (Get-Content -Raw -LiteralPath $TokenHudJs).Contains("GPT_CODEX_CUSTOM_TOKEN_SELF_TEST") -and (Get-Content -Raw -LiteralPath $TokenHudJs).Contains("total_token_usage") -and (Get-Content -Raw -LiteralPath $TokenHudJs).Contains("last_token_usage") -and (Get-Content -Raw -LiteralPath $TokenHudJs).Contains("reasoning_output_tokens") -and (Get-Content -Raw -LiteralPath $TokenHudJs).Contains("Thinking is included in Out and Total") -and (Get-Content -Raw -LiteralPath $TokenHudJs).Contains("gpt-codex-custom:token-usage:v1"))
     tokenHudRightDockContractPresent = $TokenHudRightDockContractPresent
     localPinboardContractPresent = ((Get-Content -Raw -LiteralPath $PinboardJs).Contains("GPT_CODEX_CUSTOM_REGISTER_PINNABLE_MESSAGE") -and (Get-Content -Raw -LiteralPath $PinboardJs).Contains("GPT_CODEX_CUSTOM_PINBOARD_PROBE") -and (Get-Content -Raw -LiteralPath $PinboardJs).Contains("GPT_CODEX_CUSTOM_PINBOARD_SELF_TEST"))
@@ -991,6 +1046,8 @@ $results = [ordered]@{
     modelPickerSuppressesNativeSlotInAllModes = $ModelPickerSuppressesNativeSlot
     modelPickerUltraParticlesContractPresent = $ModelPickerUltraParticlesContractPresent
     modelPickerFastModeContractPresent = $ModelPickerFastModeContractPresent
+    modelPickerFullTriggerLabelContractPresent = $ModelPickerFullTriggerLabelContractPresent
+    modelPickerUltraPurpleLightningContractPresent = $ModelPickerUltraPurpleLightningContractPresent
     chatScrollProbeContractPresent = $ChatScrollProbeContractPresent
     generatedImageDialogPositioningSafe = $GeneratedImageDialogPositioningSafe
     accountBackedChatPromotion = ((Get-Content -Raw -LiteralPath $CustomJs).Contains("data-pip-obstacle") -and (Get-Content -Raw -LiteralPath $CustomCss).Contains('data-gpt-codex-custom-mode="chat"'))

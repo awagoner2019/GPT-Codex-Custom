@@ -99,41 +99,51 @@ const expression = `(async () => {
   };
 })()`;
 
-const requestId = 1;
-const responsePromise = new Promise((resolve, reject) => {
-  const timer = setTimeout(() => reject(new Error("Chat-mode preparation timed out.")), 25_000);
-  const handleMessage = (event) => {
-    let message;
-    try {
-      message = JSON.parse(String(event.data));
-    } catch {
-      return;
-    }
-    if (message.id !== requestId) return;
-    clearTimeout(timer);
-    socket.removeEventListener("message", handleMessage);
-    resolve(message);
-  };
-  socket.addEventListener("message", handleMessage);
-});
+let requestId = 0;
+const evaluatePreparation = () => {
+  const currentRequestId = (requestId += 1);
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      socket.removeEventListener("message", handleMessage);
+      reject(new Error("Chat-mode preparation timed out."));
+    }, 25_000);
+    const handleMessage = (event) => {
+      let message;
+      try {
+        message = JSON.parse(String(event.data));
+      } catch {
+        return;
+      }
+      if (message.id !== currentRequestId) return;
+      clearTimeout(timer);
+      socket.removeEventListener("message", handleMessage);
+      resolve(message);
+    };
+    socket.addEventListener("message", handleMessage);
+    socket.send(
+      JSON.stringify({
+        id: currentRequestId,
+        method: "Runtime.evaluate",
+        params: {
+          awaitPromise: true,
+          expression,
+          returnByValue: true,
+          silent: true,
+          userGesture: false,
+        },
+      }),
+    );
+  });
+};
 
-socket.send(
-  JSON.stringify({
-    id: requestId,
-    method: "Runtime.evaluate",
-    params: {
-      awaitPromise: true,
-      expression,
-      returnByValue: true,
-      silent: true,
-      userGesture: false,
-    },
-  }),
-);
-
-let response;
+let response = null;
+let rendererEvaluationAttempts = 0;
 try {
-  response = await responsePromise;
+  for (rendererEvaluationAttempts = 1; rendererEvaluationAttempts <= 3; rendererEvaluationAttempts += 1) {
+    response = await evaluatePreparation();
+    if (!response.result?.exceptionDetails || rendererEvaluationAttempts === 3) break;
+    await delay(350);
+  }
 } finally {
   socket.close();
 }
@@ -142,8 +152,12 @@ if (response.error) {
   throw new Error(`Renderer rejected Chat-mode preparation: ${response.error.message}`);
 }
 if (response.result?.exceptionDetails) {
+  const exceptionDescription =
+    response.result.exceptionDetails.exception?.description ??
+    response.result.exceptionDetails.exception?.value ??
+    response.result.exceptionDetails.text;
   throw new Error(
-    `Chat-mode preparation threw in the renderer: ${response.result.exceptionDetails.text}`,
+    `Chat-mode preparation threw in the renderer: ${exceptionDescription}`,
   );
 }
 
@@ -152,4 +166,6 @@ if (!outcome?.ready || outcome.storedModeUnchanged !== true) {
   throw new Error(`Chat-mode preparation failed: ${JSON.stringify(outcome)}`);
 }
 
-console.log(JSON.stringify({ target: expectedTargetUrl, ...outcome }, null, 2));
+console.log(
+  JSON.stringify({ target: expectedTargetUrl, rendererEvaluationAttempts, ...outcome }, null, 2),
+);

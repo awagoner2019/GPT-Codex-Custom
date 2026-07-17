@@ -1,6 +1,6 @@
 {
   "name": "gpt-codex-custom",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "description": "Isolated UI customization layer for a copied GPT/Codex desktop build.",
   "repository": {
@@ -21,6 +21,10 @@
     "verify:bootstrap": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Test-OfficialPackageBootstrap.ps1",
     "verify:installer": "cmd /d /c Install-GPT-Codex-Custom.cmd --check && powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Test-OfficialPackageBootstrap.ps1",
     "build": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Build-Custom.ps1",
+    "build:launcher": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Build-Launcher.ps1",
+    "verify:launcher": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Test-Launcher.ps1",
+    "shortcut": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Install-LauncherShortcut.ps1",
+    "shortcut:remove": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Install-LauncherShortcut.ps1 -Remove",
     "launch": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Launch-Custom.ps1",
     "launch:no-update": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Launch-Custom.ps1 -SkipUpdateCheck",
     "launch:replace": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/Launch-Custom.ps1 -ReplaceExisting",

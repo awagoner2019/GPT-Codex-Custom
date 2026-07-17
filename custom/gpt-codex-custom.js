@@ -3323,6 +3323,7 @@ async function runChatSidebarSelfTest() {
     messageEditModeOpens: false,
     messageEditCancelRestoresBubble: false,
     messageEditDryRunWorks: false,
+    messageEditDryRunEvidence: null,
     messageEditSubmitClosesEditor: false,
     generatedImageEditControlVisible: false,
     generatedImageEditBridgeReady: false,
@@ -3729,6 +3730,40 @@ async function runChatSidebarSelfTest() {
         dryRunEditor && "value" in dryRunEditor
           ? String(dryRunEditor.value)
           : String(dryRunEditor?.textContent ?? "");
+      const dryRunSentinel = ` GPT_CODEX_CUSTOM_EDIT_DRY_RUN_${Date.now().toString(36)}`;
+      let sentinelInserted = false;
+      if (dryRunEditor instanceof HTMLTextAreaElement) {
+        const valueSetter = Object.getOwnPropertyDescriptor(
+          HTMLTextAreaElement.prototype,
+          "value",
+        )?.set;
+        valueSetter?.call(dryRunEditor, `${dryRunEditor.value}${dryRunSentinel}`);
+        dryRunEditor.dispatchEvent(new Event("input", { bubbles: true }));
+        sentinelInserted = dryRunEditor.value.includes(dryRunSentinel);
+      } else if (dryRunEditor?.isContentEditable) {
+        dryRunEditor.focus();
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(dryRunEditor);
+        range.collapse(false);
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+        sentinelInserted = document.execCommand("insertText", false, dryRunSentinel);
+        if (!sentinelInserted) {
+          dryRunEditor.append(document.createTextNode(dryRunSentinel));
+          dryRunEditor.dispatchEvent(
+            new InputEvent("input", {
+              bubbles: true,
+              data: dryRunSentinel,
+              inputType: "insertText",
+            }),
+          );
+        }
+        sentinelInserted = await waitForSelfTestCondition(
+          () => String(dryRunEditor.textContent ?? "").includes(dryRunSentinel),
+          2_000,
+        );
+      }
       const dryRunForm = dryRunEditor?.closest("form");
       const dryRunSendButton = dryRunForm
         ? [...dryRunForm.querySelectorAll("button")].find((button) => {
@@ -3741,6 +3776,7 @@ async function runChatSidebarSelfTest() {
       if (
         dryRunEditor &&
         unchangedPrompt.length > 0 &&
+        sentinelInserted &&
         dryRunSendButton &&
         globalThis.GPT_CODEX_CUSTOM_EDIT_DRY_RUN === true
       ) {
@@ -3750,12 +3786,29 @@ async function runChatSidebarSelfTest() {
           2_000,
         );
         const dryRunResult = globalThis.GPT_CODEX_CUSTOM_EDIT_DRY_RUN_RESULT;
+        result.messageEditDryRunEvidence = {
+          resultPresent: Boolean(dryRunResult),
+          expectedConversationIdType: typeof first.conversationId,
+          observedConversationIdType: typeof dryRunResult?.conversationId,
+          conversationIdMatches: dryRunResult?.conversationId === first.conversationId,
+          messageIdType: typeof dryRunResult?.messageId,
+          messageIdLength:
+            typeof dryRunResult?.messageId === "string" ? dryRunResult.messageId.length : null,
+          promptType: typeof dryRunResult?.prompt,
+          expectedPromptLength: unchangedPrompt.length,
+          observedPromptLength:
+            typeof dryRunResult?.prompt === "string" ? dryRunResult.prompt.length : null,
+          sentinelInserted,
+          promptIncludesSentinel:
+            typeof dryRunResult?.prompt === "string" &&
+            dryRunResult.prompt.includes(dryRunSentinel),
+        };
         result.messageEditDryRunWorks =
           dryRunResult?.conversationId === first.conversationId &&
           typeof dryRunResult.messageId === "string" &&
           dryRunResult.messageId.length > 0 &&
           typeof dryRunResult.prompt === "string" &&
-          dryRunResult.prompt === unchangedPrompt;
+          dryRunResult.prompt.includes(dryRunSentinel);
         result.messageEditSubmitClosesEditor = await waitForSelfTestCondition(
           () => !document.querySelector(CHAT_MESSAGE_EDITOR_SELECTOR),
           6_000,
